@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Category {
+  ELECTRONICS
+  BOOKS
+  CLOTHING
+}
+
+enum HistoryAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model Product {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(20)
+  category  Category
+  price     Decimal  @db.Decimal(10, 2)
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductHistory {
+  id        Int           @id @default(autoincrement())
+  productId Int
+  action    HistoryAction
+  oldValue  Json?
+  newValue  Json?
+  createdAt DateTime      @default(now())
+
+  @@index([productId, createdAt])
+}
+
+model ForbiddenPhrase {
+  id        Int      @id @default(autoincrement())
+  phrase    String   @unique @db.VarChar(50)
+  createdAt DateTime @default(now())
+}
