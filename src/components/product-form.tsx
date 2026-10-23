@@ -1,15 +1,15 @@
 "use client";
 
-import { useActionState, useId, type ReactNode } from "react";
-import { saveProductAction } from "@/server/actions";
-import type { ActionState, ProductFormValues } from "@/lib/action-state";
-import { MAX_DATABASE_INT } from "@/lib/product-rules";
-import { withActionToast } from "@/lib/action-toast";
+import { NumberInput } from "@/components/number-input";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { NumberInput } from "@/components/number-input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import type { ActionState, ProductFormValues } from "@/lib/action-state";
+import { withActionToast } from "@/lib/action-toast";
+import { MAX_DATABASE_INT } from "@/lib/product-rules";
+import { saveProductAction } from "@/server/actions";
+import { useActionState, useId, type ReactNode } from "react";
 
 function saveProductWithToast(previous: ActionState<ProductFormValues>, data: FormData) {
   return withActionToast(saveProductAction(previous, data));
@@ -97,7 +97,7 @@ export function ProductForm({ productId, initialValues, categoryOptions, childre
               aria-describedby={`${formId}-quantity-description${fieldErrors.quantity ? ` ${formId}-quantity-error` : ""}`}
               required
             />
-            <FieldDescription id={`${formId}-quantity-description`}>Liczba całkowita od 0 do {MAX_DATABASE_INT}.</FieldDescription>
+            <FieldDescription id={`${formId}-quantity-description`}>Liczba całkowita.</FieldDescription>
             <FieldError id={`${formId}-quantity-error`}>{fieldErrors.quantity}</FieldError>
           </Field>
         </FieldGroup>
