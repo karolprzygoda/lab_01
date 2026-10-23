@@ -1,7 +1,9 @@
 import { ConflictError, NotFoundError } from "@/lib/errors";
+import { isDatabaseError } from "@/lib/database-errors";
 import { prisma, type DbClient } from "@/lib/prisma";
 import { forbiddenPhraseInputSchema } from "@/lib/validation/forbidden-phrase.schema";
 import { validate } from "@/lib/validation/validate";
+import { validateId } from "@/lib/validation/id.schema";
 import {
   forbiddenPhraseRepository,
   type ForbiddenPhraseRepository,
@@ -16,19 +18,28 @@ export class ForbiddenPhraseService {
 
   async create(input: unknown) {
     const { phrase } = validate(forbiddenPhraseInputSchema, input);
-    if (await this.phrases.findByPhrase(phrase)) {
-      throw new ConflictError(`Zabroniona fraza "${phrase}" już istnieje`, [
-        { field: "phrase", message: "Fraza musi być unikalna" },
-      ]);
+    try {
+      return await this.phrases.create(phrase);
+    } catch (error) {
+      if (isDatabaseError(error, "P2002")) {
+        throw new ConflictError(`Zabroniona fraza "${phrase}" już istnieje`, [
+          { field: "phrase", message: "Fraza musi być unikalna" },
+        ]);
+      }
+      throw error;
     }
-    return this.phrases.create(phrase);
   }
 
   async delete(id: number) {
-    if (!(await this.phrases.findById(id))) {
-      throw new NotFoundError(`Nie znaleziono zabronionej frazy o id ${id}`);
+    validateId(id);
+    try {
+      await this.phrases.delete(id);
+    } catch (error) {
+      if (isDatabaseError(error, "P2025")) {
+        throw new NotFoundError(`Nie znaleziono zabronionej frazy o id ${id}`);
+      }
+      throw error;
     }
-    await this.phrases.delete(id);
   }
 
   async findContainedIn(text: string, db: DbClient = prisma) {
