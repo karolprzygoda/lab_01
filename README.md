@@ -162,12 +162,15 @@ src/
 │   ├── product-form-card.tsx                serwerowa otoczka formularza
 │   ├── product-form.tsx                     stan formularza produktu
 │   ├── number-input.tsx                     Input Group z przyciskami −/+
-│   ├── product-history-card.tsx             tabela historii
+│   ├── product-history-table.tsx            serwerowa tabela historii
+│   ├── product-history-dialog.tsx           Dialog lub dolny Sheet historii
 │   ├── product-skeletons.tsx                szkielety fraz i wierszy
 │   ├── product-rows.tsx                     serwerowy odczyt produktów
 │   ├── products-content.tsx                 serwerowe składanie panelu
 │   ├── products-table-card.tsx              tabela produktów
 │   └── submit-button.tsx                    stan wysyłania formularza
+├── hooks/
+│   └── use-media-query.ts                    dobór widoku do szerokości ekranu
 ├── lib/                                     kod wspólny serwera i klienta
 │   ├── product-types.ts                     typy DTO, bez kodu serwerowego
 │   ├── product-rules.ts                     kategorie i zakresy cen/liczb
@@ -418,15 +421,19 @@ pnpm test tests/validation.test.ts
 | [remove-phrase-badge.tsx](src/components/remove-phrase-badge.tsx) | Cały badge jest przyciskiem usuwania; ikona × jest w środku, a wariant `destructive` wyróżnia blokadę. |
 | [forbidden-phrases-card.tsx](src/components/forbidden-phrases-card.tsx) | Stała karta i formularz; `Suspense` obejmuje tylko listę fraz. |
 | [forbidden-phrases-list.tsx](src/components/forbidden-phrases-list.tsx) | Pobiera i wyświetla frazy z przyciskami usuwania. |
-| [product-history-card.tsx](src/components/product-history-card.tsx) | Wyświetla historię odczytaną wcześniej przez stronę. |
+| [product-history-table.tsx](src/components/product-history-table.tsx) | Serwerowa tabela historii odczytanej wcześniej przez stronę. |
+| [product-history-dialog.tsx](src/components/product-history-dialog.tsx) | Otwiera historię w `Dialog` na komputerze lub w dolnym `Sheet` na telefonie. |
+| [use-media-query.ts](src/hooks/use-media-query.ts) | Obserwuje media query przez `useSyncExternalStore`, z bezpiecznym odczytem podczas renderowania serwerowego. |
 | [error.tsx](src/app/error.tsx) | Obsługa nieoczekiwanej awarii odczytu i ponowienie przez `retry()`. |
 | [not-found.tsx](src/app/not-found.tsx) | Serwerowa strona 404 z linkiem powrotu do panelu. |
 | [globals.css](src/app/globals.css) | Style globalne importowane przez główny layout. |
 | [favicon.ico](src/app/favicon.ico) | Ikona dostępna pod `/favicon.ico`; Next.js automatycznie dodaje jej metadane na podstawie pliku w `app`. |
 
-Strona, karty, tabela, historia, szkielety i linki są komponentami serwerowymi. Formularze wymagają klienta do wyświetlania stanu akcji; `SubmitButton` korzysta z `useFormStatus`. Kontrolki Base UI obsługują interakcje w przeglądarce, a ekran błędu pozwala ponowić odczyt.
+Strona, karty, tabele produktów i historii, szkielety i linki są komponentami serwerowymi. Formularze wymagają klienta do wyświetlania stanu akcji; `SubmitButton` korzysta z `useFormStatus`. Otoczka historii wybiera widok i obsługuje zamykanie w przeglądarce, otrzymując gotową serwerową tabelę jako `children`. Kontrolki Base UI obsługują interakcje w przeglądarce, a ekran błędu pozwala ponowić odczyt.
 
 Strona odczytuje parametry URL i przygotowuje opcjonalną edycję oraz historię przez funkcje z `products-view.ts`. Na zwykłym `/` nie powoduje to zapytań o produkt ani historię. Formularze, karty i nagłówek tabeli są renderowane od razu w docelowym układzie.
+
+Link „Historia” ustawia `/?history=ID` bez przewijania strony. `getSelectedHistory` pobiera wpisy po stronie serwera, a `ProductHistoryTable` renderuje ich zawartość. `ProductHistoryDialog` korzysta z `Dialog` przy szerokości co najmniej 768 px i `Sheet side="bottom"` na mniejszych ekranach. `useMediaQuery` zwraca `null` podczas renderowania serwerowego, więc przed ustaleniem szerokości nie pojawia się niewłaściwy wariant okna. Zawartość przewija się w `ScrollArea`, a przycisk zamknięcia pozostaje dostępny. Animacje i obsługa klawiatury pochodzą z shadcn/Base UI. Po zamknięciu animacji `router.replace` usuwa wyłącznie parametr `history`; pozostałe parametry i pozycja przewinięcia są zachowane. Fokus wraca do odpowiedniego linku „Historia”, jeżeli produkt nadal jest na liście. Bezpośredni adres działa również dla usuniętego produktu, którego historia pozostała w bazie.
 
 W całym panelu są tylko dwie granice `Suspense`: `ForbiddenPhrasesList` wewnątrz karty fraz i `ProductRows` wewnątrz `TableBody`. Każdy z tych komponentów sam pobiera dane przez serwis i repozytorium. Szkielety zastępują tylko zawartość listy i wiersze. W układzie dwóch kolumn karta fraz ma wysokość formularza produktu. Lista zajmuje pozostałe miejsce w shadcn `ScrollArea`; nadmiar badge’y przewija się wewnątrz karty, bez jej rozciągania. Na telefonie obszar listy ma wysokość `h-48`. Tabela zachowuje wysokość `h-80`, przewijanie i ustalone szerokości kolumn.
 
@@ -457,7 +464,7 @@ Nieistniejący adres, np. `/nieistniejaca-strona`, wyświetla prostą stronę 40
 Parametry panelu:
 
 - `/?edit=ID` — wybór produktu do edycji;
-- `/?history=ID` — wyświetlenie historii, również po usunięciu produktu.
+- `/?history=ID` — otwarcie historii w dialogu lub dolnym arkuszu, również po usunięciu produktu.
 
 `getProductSelection` sprawdza również pojedyncze wystąpienie ID: np. `?edit=1&edit=2` daje toast o niepoprawnym identyfikatorze. Parametr `notice` wybiera tytuł i typ ze stałej `NOTICES`; nieznane wartości są pomijane. Oczekiwany brak produktu jest toastem błędu, a nieoczekiwana awaria odczytu trafia do `error.tsx`.
 
