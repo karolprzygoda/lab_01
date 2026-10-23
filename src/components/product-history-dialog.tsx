@@ -6,7 +6,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 export function ProductHistoryDialog({ productId, children }: {
   productId: number;
@@ -34,13 +34,14 @@ export function ProductHistoryDialog({ productId, children }: {
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={setOpen} onOpenChangeComplete={onOpenChangeComplete}>
-        <DialogContent className="max-h-[85dvh] grid-rows-[auto_minmax(0,1fr)_auto] sm:max-w-4xl" finalFocus={finalFocus}>
+        <DialogContent className="max-h-[85dvh] grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto] sm:max-w-4xl" finalFocus={finalFocus}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
-          <ScrollArea className="h-[60dvh] min-h-0">
-            <div className="p-1 pr-4">{children}</div>
+          <ScrollArea className="h-[60dvh] min-h-0 min-w-0 overflow-hidden">
+            <div className="w-max min-w-full p-1 pr-4 pb-4">{children}</div>
+            <ScrollBar orientation="horizontal" />
           </ScrollArea>
           <DialogFooter>
             <DialogClose render={<Button variant="outline" />}>Zamknij</DialogClose>
@@ -57,8 +58,9 @@ export function ProductHistoryDialog({ productId, children }: {
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>{description}</SheetDescription>
         </SheetHeader>
-        <ScrollArea className="h-[60dvh] min-h-0 px-4">
-          <div className="p-1 pr-4">{children}</div>
+        <ScrollArea className="h-[60dvh] min-h-0 min-w-0 overflow-hidden px-4">
+          <div className="w-max min-w-full p-1 pr-4 pb-4">{children}</div>
+          <ScrollBar orientation="horizontal" />
         </ScrollArea>
         <SheetFooter>
           <SheetClose render={<Button variant="outline" />}>Zamknij</SheetClose>
