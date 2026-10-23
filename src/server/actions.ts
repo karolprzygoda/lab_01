@@ -2,9 +2,10 @@
 
 import "server-only";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { EMPTY_PRODUCT_VALUES, type ActionState, type PhraseFormValues, type ProductFormValues } from "@/lib/action-state";
+import { EMPTY_PRODUCT_VALUES, NOTICES, type ActionState, type PhraseFormValues, type ProductFormValues } from "@/lib/action-state";
 import { AppError, NotFoundError } from "@/server/errors";
 import { validateId } from "@/server/validation/id.schema";
 import { forbiddenPhraseService } from "@/server/services/forbidden-phrase.service";
@@ -17,6 +18,10 @@ function readText(formData: FormData, name: string) {
 
 function readNumber(value: string) {
   return value.trim() === "" ? undefined : Number(value);
+}
+
+function redirectWithNotice(notice: keyof typeof NOTICES): never {
+  redirect(`/?notice=${notice}&noticeId=${randomUUID()}`);
 }
 
 function toActionError<T>(error: unknown, values: T, revision: number): ActionState<T> {
@@ -55,7 +60,7 @@ export async function saveProductAction(
   }
 
   revalidatePath("/");
-  if (isEditing) redirect("/?notice=product-saved");
+  if (isEditing) redirectWithNotice("product-saved");
   return { ok: true, revision, message: "Produkt został dodany.", values: EMPTY_PRODUCT_VALUES };
 }
 
@@ -74,7 +79,7 @@ export async function createForbiddenPhraseAction(
   return { ok: true, revision, message: "Fraza została dodana.", values: { phrase: "" } };
 }
 
-async function deleteResource(operation: () => Promise<void>, success: string): Promise<never> {
+async function deleteResource(operation: () => Promise<void>, success: keyof typeof NOTICES): Promise<never> {
   let notice = success;
   try {
     await operation();
@@ -83,7 +88,7 @@ async function deleteResource(operation: () => Promise<void>, success: string): 
     if (!(error instanceof AppError)) console.error("Delete action failed", error);
   }
   revalidatePath("/");
-  redirect(`/?notice=${notice}`);
+  redirectWithNotice(notice);
 }
 
 export async function deleteProductAction(id: number): Promise<never> {

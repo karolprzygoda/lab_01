@@ -5,18 +5,22 @@ import { createForbiddenPhraseAction } from "@/server/actions";
 import type { ActionState, PhraseFormValues } from "@/lib/action-state";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { withActionToast } from "@/lib/action-toast";
 
 const initialState: ActionState<PhraseFormValues> = { ok: false, revision: 0, values: { phrase: "" } };
 
+function createPhraseWithToast(previous: ActionState<PhraseFormValues>, data: FormData) {
+  return withActionToast(createForbiddenPhraseAction(previous, data));
+}
+
 export function ForbiddenPhraseForm({ children }: { children: ReactNode }) {
   const id = useId();
-  const [state, formAction] = useActionState(createForbiddenPhraseAction, initialState);
+  const [state, formAction] = useActionState(createPhraseWithToast, initialState);
   const error = state.fieldErrors?.phrase;
 
   return (
     <form key={state.revision} action={formAction}>
       <FieldGroup>
-        {state.message ? <p role={state.ok ? "status" : "alert"}>{state.message}</p> : null}
         <Field data-invalid={Boolean(error)}>
           <FieldLabel htmlFor={id}>Nowa zabroniona fraza</FieldLabel>
           <div className="flex gap-2">

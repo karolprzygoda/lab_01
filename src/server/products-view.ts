@@ -23,10 +23,14 @@ export const getProductSelection = cache(async (searchParams: SearchParams) => {
   const params = await searchParams;
   const edit = parseSelectionId(params.edit, "edycji");
   const history = parseSelectionId(params.history, "historii");
-  const notice =
+  const noticeKey =
     typeof params.notice === "string" && Object.hasOwn(NOTICES, params.notice)
-      ? NOTICES[params.notice as keyof typeof NOTICES]
+      ? params.notice as keyof typeof NOTICES
       : null;
+  const notice = noticeKey ? {
+    ...NOTICES[noticeKey],
+    id: typeof params.noticeId === "string" ? params.noticeId : noticeKey,
+  } : null;
 
   return { edit, history, notice };
 });

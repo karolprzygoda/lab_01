@@ -4,10 +4,15 @@ import { useActionState, useId, type ReactNode } from "react";
 import { saveProductAction } from "@/server/actions";
 import type { ActionState, ProductFormValues } from "@/lib/action-state";
 import { MAX_DATABASE_INT } from "@/lib/product-rules";
+import { withActionToast } from "@/lib/action-toast";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+
+function saveProductWithToast(previous: ActionState<ProductFormValues>, data: FormData) {
+  return withActionToast(saveProductAction(previous, data));
+}
 
 export function ProductForm({ productId, initialValues, categoryOptions, children }: {
   productId?: number;
@@ -17,13 +22,12 @@ export function ProductForm({ productId, initialValues, categoryOptions, childre
 }) {
   const formId = useId();
   const initialState: ActionState<ProductFormValues> = { ok: false, revision: 0, values: initialValues };
-  const [state, formAction] = useActionState(saveProductAction, initialState);
+  const [state, formAction] = useActionState(saveProductWithToast, initialState);
   const { values, fieldErrors = {} } = state;
 
   return (
     <form key={state.revision} action={formAction} className="flex flex-col gap-5">
       {productId !== undefined ? <input type="hidden" name="id" value={productId} /> : null}
-      {state.message ? <p role={state.ok ? "status" : "alert"}>{state.message}</p> : null}
       <FieldGroup>
         <Field data-invalid={Boolean(fieldErrors.name)}>
           <FieldLabel htmlFor={`${formId}-name`}>Nazwa</FieldLabel>

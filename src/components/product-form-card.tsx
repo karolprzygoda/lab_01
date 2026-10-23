@@ -7,9 +7,8 @@ import { SubmitButton } from "@/components/submit-button";
 import { CATEGORY_NAMES, PRICE_RANGES } from "@/lib/product-rules";
 import type { Category } from "@generated/enums";
 
-export function ProductFormCard({ editingProduct, error }: {
+export function ProductFormCard({ editingProduct }: {
   editingProduct: ProductDto | null;
-  error: string | null;
 }) {
   return (
     <Card>
@@ -22,7 +21,6 @@ export function ProductFormCard({ editingProduct, error }: {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {error ? <p role="alert">{error}</p> : null}
         <ProductForm
           key={editingProduct?.id ?? "new"}
           productId={editingProduct?.id}
