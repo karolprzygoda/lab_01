@@ -4,12 +4,28 @@ import { ActionLink } from "@/components/action-link";
 import { SubmitButton } from "@/components/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { PackageOpenIcon } from "lucide-react";
 
 export async function ProductRows() {
   const products = await productService.list();
 
   if (products.length === 0) {
-    return <TableRow><TableCell colSpan={6}>Brak produktów.</TableCell></TableRow>;
+    return (
+      <TableRow>
+        <TableCell colSpan={6}>
+          <div className="max-w-[calc(100vw-6rem)] md:max-w-none">
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><PackageOpenIcon aria-hidden="true" /></EmptyMedia>
+                <EmptyTitle>Brak produktów</EmptyTitle>
+                <EmptyDescription>Dodaj pierwszy produkt za pomocą formularza powyżej.</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
   }
 
   return products.map((product) => (
