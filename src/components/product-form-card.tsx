@@ -1,13 +1,17 @@
 import { ProductForm } from "@/components/product-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { ProductDto } from "@/lib/product-types";
+import { getEditingProduct } from "@/server/products-view";
 import { EMPTY_PRODUCT_VALUES } from "@/lib/action-state";
 import { ActionLink } from "@/components/action-link";
 import { SubmitButton } from "@/components/submit-button";
 import { CATEGORY_NAMES, PRICE_RANGES } from "@/lib/product-rules";
 import type { Category } from "@generated/enums";
 
-export function ProductFormCard({ editingProduct }: { editingProduct: ProductDto | null }) {
+export async function ProductFormCard({ searchParams }: {
+  searchParams: PageProps<"/">["searchParams"];
+}) {
+  const { product: editingProduct, error } = await getEditingProduct(searchParams);
+
   return (
     <Card>
       <CardHeader>
@@ -19,6 +23,7 @@ export function ProductFormCard({ editingProduct }: { editingProduct: ProductDto
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {error ? <p role="alert" className="mb-4 text-sm">{error}</p> : null}
         <ProductForm
           key={editingProduct?.id ?? "new"}
           productId={editingProduct?.id}

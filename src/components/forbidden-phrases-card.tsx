@@ -3,13 +3,11 @@ import { ForbiddenPhraseForm } from "@/components/forbidden-phrase-form";
 import { SubmitButton } from "@/components/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { forbiddenPhraseService } from "@/server/services/forbidden-phrase.service";
 
-export type ForbiddenPhraseItem = {
-  id: number;
-  phrase: string;
-};
+export async function ForbiddenPhrasesCard() {
+  const phrases = await forbiddenPhraseService.list();
 
-export function ForbiddenPhrasesCard({ phrases }: { phrases: ForbiddenPhraseItem[] }) {
   return (
     <Card>
       <CardHeader>

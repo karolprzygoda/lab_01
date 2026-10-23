@@ -9,14 +9,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { HistoryEntryDto } from "@/lib/product-types";
+import { getSelectedHistory } from "@/server/products-view";
 
 interface ProductHistoryCardProps {
-  productId: number;
-  entries: HistoryEntryDto[];
+  searchParams: PageProps<"/">["searchParams"];
 }
 
-export function ProductHistoryCard({ productId, entries }: ProductHistoryCardProps) {
+export async function ProductHistoryCard({ searchParams }: ProductHistoryCardProps) {
+  const { history, error } = await getSelectedHistory(searchParams);
+  if (error) return <p role="alert">{error}</p>;
+  if (!history) return null;
+
+  const { productId, entries } = history;
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">

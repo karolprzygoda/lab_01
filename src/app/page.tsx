@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { ProductsContent } from "@/components/products-content";
 
 export default function Home({ searchParams }: PageProps<"/">) {
@@ -10,9 +9,7 @@ export default function Home({ searchParams }: PageProps<"/">) {
           Dodawaj produkty, zarządzaj zabronionymi frazami i przeglądaj historię zmian.
         </p>
       </div>
-      <Suspense fallback={<p role="status" className="text-sm">Ładowanie danych z bazy…</p>}>
-        <ProductsContent searchParams={searchParams} />
-      </Suspense>
+      <ProductsContent searchParams={searchParams} />
     </main>
   );
 }

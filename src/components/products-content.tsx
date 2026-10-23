@@ -1,32 +1,39 @@
+import { Suspense } from "react";
 import { ForbiddenPhrasesCard } from "@/components/forbidden-phrases-card";
 import { ProductFormCard } from "@/components/product-form-card";
 import { ProductHistoryCard } from "@/components/product-history-card";
 import { ProductsTableCard } from "@/components/products-table-card";
-import { getProductsView } from "@/server/products-view";
+import { ProductNotice } from "@/components/product-notice";
+import {
+  ForbiddenPhrasesSkeleton,
+  ProductFormSkeleton,
+  ProductsTableSkeleton,
+} from "@/components/product-skeletons";
 
 type ProductsContentProps = {
   searchParams: PageProps<"/">["searchParams"];
 };
 
-export async function ProductsContent({ searchParams }: ProductsContentProps) {
-  const view = await getProductsView(searchParams);
-
+export function ProductsContent({ searchParams }: ProductsContentProps) {
   return (
     <div className="flex flex-col gap-6">
-      {view.notice ? <p role="status">{view.notice}</p> : null}
-      {view.editError ? <p role="alert">{view.editError}</p> : null}
-      {view.historyError ? <p role="alert">{view.historyError}</p> : null}
+      <Suspense fallback={null}>
+        <ProductNotice searchParams={searchParams} />
+      </Suspense>
       <div className="grid gap-6 md:grid-cols-2">
-        <ProductFormCard editingProduct={view.editingProduct} />
-        <ForbiddenPhrasesCard phrases={view.phrases} />
+        <Suspense fallback={<ProductFormSkeleton />}>
+          <ProductFormCard searchParams={searchParams} />
+        </Suspense>
+        <Suspense fallback={<ForbiddenPhrasesSkeleton />}>
+          <ForbiddenPhrasesCard />
+        </Suspense>
       </div>
-      <ProductsTableCard products={view.products} />
-      {view.history ? (
-        <ProductHistoryCard
-          productId={view.history.productId}
-          entries={view.history.entries}
-        />
-      ) : null}
+      <Suspense fallback={<ProductsTableSkeleton />}>
+        <ProductsTableCard />
+      </Suspense>
+      <Suspense fallback={null}>
+        <ProductHistoryCard searchParams={searchParams} />
+      </Suspense>
     </div>
   );
 }

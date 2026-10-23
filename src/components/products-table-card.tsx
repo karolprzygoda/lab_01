@@ -11,9 +11,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { ProductDto } from "@/lib/product-types";
+import { productService } from "@/server/services/product.service";
 
-export function ProductsTableCard({ products }: { products: ProductDto[] }) {
+export async function ProductsTableCard() {
+  const products = await productService.list();
+
   return (
     <Card>
       <CardHeader>

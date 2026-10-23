@@ -1,8 +1,8 @@
 import "server-only";
 
+import { cache } from "react";
 import { NOTICES } from "@/lib/action-state";
 import { NotFoundError, ValidationError } from "@/server/errors";
-import { forbiddenPhraseService } from "@/server/services/forbidden-phrase.service";
 import { productService } from "@/server/services/product.service";
 import { validateId } from "@/server/validation/id.schema";
 
@@ -19,7 +19,7 @@ function parseSelectionId(value: string | string[] | undefined, label: string) {
   }
 }
 
-async function resolveRequestedView(searchParams: SearchParams) {
+export const getProductSelection = cache(async (searchParams: SearchParams) => {
   const params = await searchParams;
   const edit = parseSelectionId(params.edit, "edycji");
   const history = parseSelectionId(params.history, "historii");
@@ -28,45 +28,32 @@ async function resolveRequestedView(searchParams: SearchParams) {
       ? NOTICES[params.notice as keyof typeof NOTICES]
       : null;
 
-  let selectedHistory = null;
-  let historyError = history.error;
+  return { edit, history, notice };
+});
 
-  if (history.id !== null) {
-    try {
-      selectedHistory = {
-        productId: history.id,
-        entries: await productService.getHistory(history.id),
-      };
-    } catch (error) {
-      if (!(error instanceof NotFoundError)) throw error;
-      historyError = error.message;
-    }
+export async function getEditingProduct(searchParams: SearchParams) {
+  const { edit } = await getProductSelection(searchParams);
+  if (edit.id === null) return { product: null, error: edit.error };
+
+  try {
+    return { product: await productService.get(edit.id), error: null };
+  } catch (error) {
+    if (!(error instanceof NotFoundError)) throw error;
+    return { product: null, error: `Nie znaleziono produktu o id ${edit.id}.` };
   }
-
-  return { edit, selectedHistory, historyError, notice };
 }
 
-export async function getProductsView(searchParams: SearchParams) {
-  const [view, products, phrases] = await Promise.all([
-    resolveRequestedView(searchParams),
-    productService.list(),
-    forbiddenPhraseService.list(),
-  ]);
+export async function getSelectedHistory(searchParams: SearchParams) {
+  const { history } = await getProductSelection(searchParams);
+  if (history.id === null) return { history: null, error: history.error };
 
-  const editingProduct = products.find(({ id }) => id === view.edit.id) ?? null;
-  const editError =
-    view.edit.error ??
-    (view.edit.id !== null && !editingProduct
-      ? `Nie znaleziono produktu o id ${view.edit.id}.`
-      : null);
-
-  return {
-    products,
-    phrases,
-    editingProduct,
-    editError,
-    history: view.selectedHistory,
-    historyError: view.historyError,
-    notice: view.notice,
-  };
+  try {
+    return {
+      history: { productId: history.id, entries: await productService.getHistory(history.id) },
+      error: null,
+    };
+  } catch (error) {
+    if (!(error instanceof NotFoundError)) throw error;
+    return { history: null, error: error.message };
+  }
 }
