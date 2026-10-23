@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { HistoryEntryDto } from "@/services/mappers";
+import type { HistoryEntryDto } from "@/lib/product-types";
 
 interface ProductHistoryCardProps {
   productId: number;

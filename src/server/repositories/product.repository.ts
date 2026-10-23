@@ -1,5 +1,7 @@
+import "server-only";
+
 import type { Category } from "@generated/enums";
-import { prisma, type DbClient } from "@/lib/prisma";
+import { prisma, type DbClient } from "@/server/db";
 
 export type ProductData = {
   name: string;
@@ -18,7 +20,6 @@ export class ProductRepository {
   }
 
   async findByIdForUpdate(id: number, db: DbClient) {
-    // The caller must keep the read, mutation and history write in one transaction.
     await db.$queryRaw`SELECT "id" FROM "Product" WHERE "id" = ${id} FOR UPDATE`;
     return this.findById(id, db);
   }

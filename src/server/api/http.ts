@@ -1,7 +1,9 @@
+import "server-only";
+
 import { NextResponse } from "next/server";
 import { Prisma } from "@generated/client";
-import { AppError, ValidationError } from "@/lib/errors";
-import { validateId } from "@/lib/validation/id.schema";
+import { AppError, ValidationError } from "@/server/errors";
+import { validateId } from "@/server/validation/id.schema";
 
 export type IdRouteContext = { params: Promise<{ id: string }> };
 

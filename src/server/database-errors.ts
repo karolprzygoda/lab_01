@@ -1,3 +1,5 @@
+import "server-only";
+
 import { Prisma } from "@generated/client";
 
 export function isDatabaseError(error: unknown, code: string) {

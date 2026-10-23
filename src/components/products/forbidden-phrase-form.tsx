@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, type ReactNode } from "react";
-import { createForbiddenPhraseAction } from "@/app/actions";
+import { createForbiddenPhraseAction } from "@/server/actions";
 import type { ActionState, PhraseFormValues } from "@/lib/action-state";
 import {
   Form,

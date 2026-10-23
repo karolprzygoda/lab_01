@@ -1,5 +1,7 @@
+import "server-only";
+
 import { z } from "zod";
-import { validate } from "@/lib/validation/validate";
+import { validate } from "@/server/validation/validate";
 import { MAX_DATABASE_INT } from "@/lib/product-rules";
 
 const message = `Identyfikator musi być liczbą całkowitą od 1 do ${MAX_DATABASE_INT}`;

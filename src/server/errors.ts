@@ -1,3 +1,5 @@
+import "server-only";
+
 export type FieldError = { field: string; message: string };
 
 export abstract class AppError extends Error {

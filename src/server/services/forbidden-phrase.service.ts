@@ -1,13 +1,15 @@
-import { ConflictError, NotFoundError } from "@/lib/errors";
-import { isDatabaseError } from "@/lib/database-errors";
-import { prisma, type DbClient } from "@/lib/prisma";
-import { forbiddenPhraseInputSchema } from "@/lib/validation/forbidden-phrase.schema";
-import { validate } from "@/lib/validation/validate";
-import { validateId } from "@/lib/validation/id.schema";
+import "server-only";
+
+import { ConflictError, NotFoundError } from "@/server/errors";
+import { isDatabaseError } from "@/server/database-errors";
+import { prisma, type DbClient } from "@/server/db";
+import { forbiddenPhraseInputSchema } from "@/server/validation/forbidden-phrase.schema";
+import { validate } from "@/server/validation/validate";
+import { validateId } from "@/server/validation/id.schema";
 import {
   forbiddenPhraseRepository,
   type ForbiddenPhraseRepository,
-} from "@/repositories/forbidden-phrase.repository";
+} from "@/server/repositories/forbidden-phrase.repository";
 
 export class ForbiddenPhraseService {
   constructor(private readonly phrases: ForbiddenPhraseRepository = forbiddenPhraseRepository) {}

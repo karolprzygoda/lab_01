@@ -1,4 +1,6 @@
-import { prisma, type DbClient } from "@/lib/prisma";
+import "server-only";
+
+import { prisma, type DbClient } from "@/server/db";
 
 export class ForbiddenPhraseRepository {
   findAll(db: DbClient = prisma) {

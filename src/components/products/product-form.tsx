@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, type ReactNode } from "react";
-import { saveProductAction } from "@/app/actions";
+import { saveProductAction } from "@/server/actions";
 import type { ActionState, ProductFormValues } from "@/lib/action-state";
 import {
   Form,

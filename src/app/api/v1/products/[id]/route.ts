@@ -1,5 +1,5 @@
-import { noContent, ok, readId, readJson, withErrorHandling, type IdRouteContext } from "@/lib/http";
-import { productService } from "@/services/product.service";
+import { noContent, ok, readId, readJson, withErrorHandling, type IdRouteContext } from "@/server/api/http";
+import { productService } from "@/server/services/product.service";
 
 export const GET = withErrorHandling(async (_request: Request, context: IdRouteContext) => {
   return ok(await productService.get(await readId(context)));

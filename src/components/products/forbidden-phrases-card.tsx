@@ -1,4 +1,4 @@
-import { deleteForbiddenPhraseAction } from "@/app/actions";
+import { deleteForbiddenPhraseAction } from "@/server/actions";
 import { ForbiddenPhraseForm } from "@/components/products/forbidden-phrase-form";
 import { SubmitButton } from "@/components/products/submit-button";
 import { Badge } from "@/components/ui/badge";

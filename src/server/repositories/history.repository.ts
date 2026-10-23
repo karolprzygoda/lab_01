@@ -1,6 +1,8 @@
+import "server-only";
+
 import type { Prisma } from "@generated/client";
 import type { HistoryAction } from "@generated/enums";
-import { prisma, type DbClient } from "@/lib/prisma";
+import { prisma, type DbClient } from "@/server/db";
 
 export type HistoryEntryData = {
   productId: number;
@@ -19,7 +21,6 @@ export class HistoryRepository {
   findByProductId(productId: number, db: DbClient = prisma) {
     return db.productHistory.findMany({
       where: { productId },
-      // Transaction timestamps can precede time spent waiting for a product lock.
       orderBy: { id: "asc" },
     });
   }

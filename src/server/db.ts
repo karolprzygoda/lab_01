@@ -1,13 +1,14 @@
+import "server-only";
+
 import { PrismaPg } from "@prisma/adapter-pg";
+import { env } from "@/env";
 import { PrismaClient, type Prisma } from "@generated/client";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function createPrismaClient() {
-  // Local Prisma Postgres serves one connection at a time. Release idle
-  // connections promptly so the app, CLI and test process can share an instance.
   const adapter = new PrismaPg({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: env.DATABASE_URL,
     max: 1,
     idleTimeoutMillis: 1,
     connectionTimeoutMillis: 5_000,
@@ -17,7 +18,7 @@ function createPrismaClient() {
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
+if (env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
 

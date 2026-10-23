@@ -1,6 +1,8 @@
+import "server-only";
+
 import { z } from "zod";
 import { Category } from "@generated/enums";
-import { ValidationError } from "@/lib/errors";
+import { ValidationError } from "@/server/errors";
 import { CATEGORY_NAMES, MAX_DATABASE_INT, PRICE_RANGES } from "@/lib/product-rules";
 
 export { Category };

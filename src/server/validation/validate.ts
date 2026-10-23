@@ -1,5 +1,7 @@
+import "server-only";
+
 import type { z } from "zod";
-import { ValidationError } from "@/lib/errors";
+import { ValidationError } from "@/server/errors";
 
 export function validate<T extends z.ZodType>(schema: T, input: unknown): z.output<T> {
   const result = schema.safeParse(input);

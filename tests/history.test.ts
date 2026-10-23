@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { HistoryRepository } from "@/repositories/history.repository";
-import { productRepository } from "@/repositories/product.repository";
-import { ProductService } from "@/services/product.service";
+import { HistoryRepository } from "@/server/repositories/history.repository";
+import { productRepository } from "@/server/repositories/product.repository";
+import { ProductService } from "@/server/services/product.service";
 import { api, createProduct, resetDatabase, validProduct } from "./helpers";
 
 type HistoryEntry = {

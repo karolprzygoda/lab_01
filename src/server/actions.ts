@@ -1,12 +1,14 @@
 "use server";
 
+import "server-only";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { EMPTY_PRODUCT_VALUES, type ActionState, type PhraseFormValues, type ProductFormValues } from "@/lib/action-state";
-import { AppError, NotFoundError } from "@/lib/errors";
-import { validateId } from "@/lib/validation/id.schema";
-import { forbiddenPhraseService } from "@/services/forbidden-phrase.service";
-import { productService } from "@/services/product.service";
+import { AppError, NotFoundError } from "@/server/errors";
+import { validateId } from "@/server/validation/id.schema";
+import { forbiddenPhraseService } from "@/server/services/forbidden-phrase.service";
+import { productService } from "@/server/services/product.service";
 
 function readText(formData: FormData, name: string) {
   const value = formData.get(name);
@@ -52,7 +54,6 @@ export async function saveProductAction(
     return toActionError(error, values, revision);
   }
 
-  // Navigation is outside the catch: redirect uses a framework control-flow exception.
   revalidatePath("/");
   if (isEditing) redirect("/?notice=product-saved");
   return { ok: true, revision, message: "Produkt został dodany.", values: EMPTY_PRODUCT_VALUES };

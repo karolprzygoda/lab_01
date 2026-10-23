@@ -4,10 +4,10 @@ import { ProductFormCard } from "@/components/products/product-form-card";
 import { ProductHistoryCard } from "@/components/products/product-history-card";
 import { ProductsTableCard } from "@/components/products/products-table-card";
 import { NOTICES } from "@/lib/action-state";
-import { NotFoundError, ValidationError } from "@/lib/errors";
-import { validateId } from "@/lib/validation/id.schema";
-import { forbiddenPhraseService } from "@/services/forbidden-phrase.service";
-import { productService } from "@/services/product.service";
+import { NotFoundError, ValidationError } from "@/server/errors";
+import { validateId } from "@/server/validation/id.schema";
+import { forbiddenPhraseService } from "@/server/services/forbidden-phrase.service";
+import { productService } from "@/server/services/product.service";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 

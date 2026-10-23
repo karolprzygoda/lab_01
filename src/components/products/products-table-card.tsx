@@ -1,4 +1,4 @@
-import { deleteProductAction } from "@/app/actions";
+import { deleteProductAction } from "@/server/actions";
 import { SubmitButton } from "@/components/products/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { ActionLink } from "@/components/products/action-link";
@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { ProductDto } from "@/services/mappers";
+import type { ProductDto } from "@/lib/product-types";
 
 export function ProductsTableCard({ products }: { products: ProductDto[] }) {
   return (

@@ -1,5 +1,5 @@
 import { inject } from "vitest";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/server/db";
 import { testDatabaseUrl } from "./database-safety";
 
 type ApiResponse<T = unknown> = { status: number; body: T };
@@ -44,7 +44,6 @@ export async function createProduct(overrides: Partial<typeof validProduct> = {}
 }
 
 export async function resetDatabase() {
-  // Re-check immediately before the destructive operation, even for direct callers.
   testDatabaseUrl({
     DATABASE_URL: process.env.LAB01_APPLICATION_DATABASE_URL,
     TEST_DATABASE_URL: process.env.DATABASE_URL,

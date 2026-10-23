@@ -1,6 +1,6 @@
 import { connection } from "next/server";
-import { created, ok, readJson, withErrorHandling } from "@/lib/http";
-import { productService } from "@/services/product.service";
+import { created, ok, readJson, withErrorHandling } from "@/server/api/http";
+import { productService } from "@/server/services/product.service";
 
 export const GET = withErrorHandling(async () => {
   await connection();

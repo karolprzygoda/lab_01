@@ -1,14 +1,16 @@
+import "server-only";
+
 import type { Product } from "@generated/client";
 import { HistoryAction } from "@generated/enums";
-import { isDatabaseError } from "@/lib/database-errors";
-import { validateId } from "@/lib/validation/id.schema";
-import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
-import { prisma, type DbClient } from "@/lib/prisma";
-import { validateProductInput, type ProductInput } from "@/lib/validation/product.schema";
-import { historyRepository, type HistoryRepository } from "@/repositories/history.repository";
-import { productRepository, type ProductRepository } from "@/repositories/product.repository";
-import { forbiddenPhraseService, type ForbiddenPhraseService } from "@/services/forbidden-phrase.service";
-import { toHistoryEntryDto, toProductDto } from "@/services/mappers";
+import { isDatabaseError } from "@/server/database-errors";
+import { validateId } from "@/server/validation/id.schema";
+import { ConflictError, NotFoundError, ValidationError } from "@/server/errors";
+import { prisma, type DbClient } from "@/server/db";
+import { validateProductInput, type ProductInput } from "@/server/validation/product.schema";
+import { historyRepository, type HistoryRepository } from "@/server/repositories/history.repository";
+import { productRepository, type ProductRepository } from "@/server/repositories/product.repository";
+import { forbiddenPhraseService, type ForbiddenPhraseService } from "@/server/services/forbidden-phrase.service";
+import { toHistoryEntryDto, toProductDto } from "@/server/mappers";
 
 function snapshot(product: Product) {
   return {
