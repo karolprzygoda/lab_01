@@ -28,7 +28,7 @@ export function ProductHistoryTable({ entries }: ProductHistoryTableProps) {
         {entries.map((entry) => (
           <TableRow key={entry.id}>
             <TableCell>
-              <Badge>{entry.action}</Badge>
+              <Badge data-history-action={entry.action}>{entry.action}</Badge>
             </TableCell>
             <TableCell>
               {entry.oldValue ? JSON.stringify(entry.oldValue) : "—"}

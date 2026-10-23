@@ -68,12 +68,14 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --toast-success-background: var(--color-green-50);
-  --toast-success-foreground: var(--color-green-900);
-  --toast-success-border: var(--color-green-200);
-  --toast-error-background: var(--color-red-50);
-  --toast-error-foreground: var(--color-red-900);
-  --toast-error-border: var(--color-red-200);
+  --status-success-background: var(--color-green-50);
+  --status-success-foreground: var(--color-green-900);
+  --status-success-border: var(--color-green-200);
+  --status-error-background: var(--color-red-50);
+  --status-error-foreground: var(--color-red-900);
+  --status-error-border: var(--color-red-200);
+  --status-info-background: var(--color-blue-50);
+  --status-info-foreground: var(--color-blue-900);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -108,12 +110,14 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --toast-success-background: var(--color-green-950);
-  --toast-success-foreground: var(--color-green-200);
-  --toast-success-border: var(--color-green-800);
-  --toast-error-background: var(--color-red-950);
-  --toast-error-foreground: var(--color-red-200);
-  --toast-error-border: var(--color-red-800);
+  --status-success-background: var(--color-green-950);
+  --status-success-foreground: var(--color-green-200);
+  --status-success-border: var(--color-green-800);
+  --status-error-background: var(--color-red-950);
+  --status-error-foreground: var(--color-red-200);
+  --status-error-border: var(--color-red-800);
+  --status-info-background: var(--color-blue-950);
+  --status-info-foreground: var(--color-blue-200);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -152,16 +156,28 @@
 
 @layer components {
   [data-slot="toast"][data-type="success"] {
-    --popover: var(--toast-success-background);
-    --popover-foreground: var(--toast-success-foreground);
-    --muted-foreground: var(--toast-success-foreground);
-    --border: var(--toast-success-border);
+    --popover: var(--status-success-background);
+    --popover-foreground: var(--status-success-foreground);
+    --muted-foreground: var(--status-success-foreground);
+    --border: var(--status-success-border);
   }
   [data-slot="toast"][data-type="error"] {
-    --popover: var(--toast-error-background);
-    --popover-foreground: var(--toast-error-foreground);
-    --muted-foreground: var(--toast-error-foreground);
-    --destructive: var(--toast-error-foreground);
-    --border: var(--toast-error-border);
+    --popover: var(--status-error-background);
+    --popover-foreground: var(--status-error-foreground);
+    --muted-foreground: var(--status-error-foreground);
+    --destructive: var(--status-error-foreground);
+    --border: var(--status-error-border);
+  }
+  [data-slot="badge"][data-history-action="CREATE"] {
+    --primary: var(--status-success-background);
+    --primary-foreground: var(--status-success-foreground);
+  }
+  [data-slot="badge"][data-history-action="UPDATE"] {
+    --primary: var(--status-info-background);
+    --primary-foreground: var(--status-info-foreground);
+  }
+  [data-slot="badge"][data-history-action="DELETE"] {
+    --primary: var(--status-error-background);
+    --primary-foreground: var(--status-error-foreground);
   }
 }
