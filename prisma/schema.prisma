@@ -21,7 +21,6 @@ enum HistoryAction {
 
 model Product {
   id        Int      @id @default(autoincrement())
-  // Case-insensitive uniqueness is additionally enforced by a SQL expression index.
   name      String   @unique @db.VarChar(20)
   category  Category
   price     Decimal  @db.Decimal(10, 2)
