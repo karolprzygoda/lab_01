@@ -26,7 +26,7 @@ export function ProductsContent({
       {historyError ? <NotificationToast key={`history:${historyError}`} notification={{
         id: `history:${historyError}`, title: historyError, type: "error",
       }} /> : null}
-      <div className="grid items-start gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         <ProductFormCard editingProduct={editingProduct} />
         <ForbiddenPhrasesCard />
       </div>
