@@ -72,18 +72,15 @@ pnpm db:generate
 
 Kopiowanie `.env` wykonaj tylko przy pierwszym uruchomieniu, jeżeli nie masz już własnej konfiguracji.
 
-Uruchom w osobnym terminalu bazę aplikacji i pozostaw ten proces włączony:
+Uruchom bazę i aplikację jednym poleceniem:
 
 ```bash
-pnpm db:dev
-```
-
-W drugim terminalu zastosuj zapisane migracje i uruchom aplikację:
-
-```bash
-pnpm db:deploy
 pnpm dev
 ```
+
+Skrypt kolejno uruchamia instancję Prisma `lab01` w tle, stosuje istniejące migracje i startuje serwer deweloperski Next.js. Jeżeli baza już działa, korzysta z tej samej instancji. Gdy uruchomienie bazy lub migracje zakończą się błędem, Next.js nie zostanie uruchomiony.
+
+`Ctrl+C` zatrzymuje Next.js; baza pozostaje w tle. Aby ją zatrzymać, wykonaj `pnpm exec prisma dev stop lab01`. Samą bazę możesz nadal uruchomić poleceniem `pnpm db:dev` w osobnym terminalu.
 
 Adresy:
 
@@ -113,7 +110,7 @@ Następnie:
 pnpm test
 ```
 
-Serwer Next.js dla testów jest uruchamiany i zatrzymywany automatycznie. Instancję bazy uruchamiasz osobno. Lokalne procesy Prisma można zakończyć klawiszem `q` w ich terminalu; ponowne uruchomienie tej samej nazwanej instancji zachowuje dane.
+Serwer Next.js dla testów jest uruchamiany i zatrzymywany automatycznie. Instancję testową uruchamiasz osobno — `pnpm dev` uruchamia tylko bazę aplikacji. Proces Prisma działający w terminalu można zakończyć klawiszem `q`, a instancję w tle poleceniem `pnpm exec prisma dev stop NAZWA`. Ponowne uruchomienie tej samej nazwanej instancji zachowuje dane.
 
 ### Zgodność lokalnej bazy z zadaniem
 
@@ -191,7 +188,7 @@ Każdy ręcznie pisany moduł w `src/server` importuje `server-only`. Next.js zg
 
 Alias `@/` oznacza katalog `src/`, a `@generated/` katalog `prisma/generated/`. Wygenerowany klient jest ignorowany przez Git; po pobraniu projektu odtwarza go `pnpm db:generate`. Plików klienta nie edytuje się ręcznie. Lokalizację określa `output = "./generated"` w `prisma/schema.prisma`, względem pliku schematu. Importy klienta bazy wskazują `@generated/client`, a typów i enumów `@generated/enums`.
 
-Folder `docs/` zawiera lokalny audyt i ściągawkę prezentacji. Jest ignorowany przez Git, więc nie pojawi się po sklonowaniu repozytorium; dokumentacją przechowywaną w repozytorium jest ten README.
+Folder `docs/` zawiera lokalną ściągawkę prezentacji. Jest ignorowany przez Git, więc nie pojawi się po sklonowaniu repozytorium; dokumentacją przechowywaną w repozytorium jest ten README.
 
 ## 5. Zadanie podstawowe: CRUD i walidacja
 
@@ -481,7 +478,7 @@ HAVING count(*) > 1;
 | `pnpm db:migrate --name zmiana` | Utworzenie migracji po zmianie modelu. |
 | `pnpm db:generate` | Odtworzenie ignorowanego klienta w `prisma/generated`; wymagane po sklonowaniu i po zmianie schematu. |
 | `pnpm db:studio` | Przeglądanie tabel bazy aplikacji. |
-| `pnpm dev` | Serwer aplikacji na porcie 3000. |
+| `pnpm dev` | Baza aplikacji w tle → migracje → serwer Next.js na porcie 3000. |
 | `pnpm test` | Testy wymagań zadania. |
 | `pnpm lint` | Kontrola reguł ESLint. |
 | `pnpm typecheck` | Generowanie typów tras i kontrola TypeScript. |
@@ -489,7 +486,7 @@ HAVING count(*) > 1;
 
 Najczęstsze problemy:
 
-- **`P1001` / `ECONNREFUSED`:** uruchom właściwą instancję Prisma i sprawdź port w `.env`.
+- **`P1001` / `ECONNREFUSED`:** `pnpm dev` uruchamia lokalną bazę aplikacji. Jeśli zatrzymano ją później, wykonaj `pnpm db:dev --detach` i odśwież panel. Sprawdź też port w `.env`.
 - **Testy odrzucają adres bazy:** `DATABASE_URL` i `TEST_DATABASE_URL` nie mogą wskazywać tej samej instancji. Domyślnie są to porty 51214 i 51314.
 - **`Lock file is already being held` po przerwaniu procesu:** odczekaj chwilę i ponów uruchomienie instancji.
 - **Zajęty port instancji:** zakończ wcześniejszy proces lub zmień porty CLI oraz odpowiadające im adresy w `.env`.
