@@ -134,7 +134,7 @@ src/
 │   ├── error.tsx                            ekran awarii i ponowienie
 │   ├── favicon.ico                          automatycznie wykrywana ikona strony
 │   ├── not-found.tsx                         prosta strona 404
-│   └── globals.css                          domyślny motyw shadcn
+│   └── globals.css                          motyw shadcn i kolory statusów
 ├── server/                                  moduły oznaczone server-only
 │   ├── db.ts                                współdzielony klient Prisma
 │   ├── actions.ts                           Server Actions formularzy
@@ -161,6 +161,7 @@ src/
 │   ├── notification-toast.tsx              toast po przekierowaniu i błędach URL
 │   ├── product-form-card.tsx                serwerowa otoczka formularza
 │   ├── product-form.tsx                     stan formularza produktu
+│   ├── number-input.tsx                     Input Group z przyciskami −/+
 │   ├── product-history-card.tsx             tabela historii
 │   ├── product-skeletons.tsx                szkielety fraz i wierszy
 │   ├── product-rows.tsx                     serwerowy odczyt produktów
@@ -409,6 +410,7 @@ pnpm test tests/validation.test.ts
 | [actions.ts](src/server/actions.ts) | Odczytuje `FormData`, wywołuje serwisy, zwraca komunikaty i odświeża widok. |
 | [product-form-card.tsx](src/components/product-form-card.tsx) | Otrzymuje gotowy produkt do edycji; przygotowuje wartości formularza, etykiety kategorii i przyciski. |
 | [product-form.tsx](src/components/product-form.tsx) | Obsługuje stan błędów i zachowuje wartości pól przez `useActionState`. |
+| [number-input.tsx](src/components/number-input.tsx) | Składa shadcn `InputGroupInput`, dodatki i przyciski −/+, zachowując natywną obsługę liczb. |
 | [products-table-card.tsx](src/components/products-table-card.tsx) | Stała karta, nagłówek i kolumny tabeli; `Suspense` jest wewnątrz `TableBody`. |
 | [product-rows.tsx](src/components/product-rows.tsx) | Pobiera listę produktów i zwraca wyłącznie wiersze z akcjami. |
 | [notification-toast.tsx](src/components/notification-toast.tsx) | Wyświetla przekazany toast sukcesu lub błędu; nie zajmuje miejsca w układzie strony. |
@@ -426,17 +428,19 @@ Strona, karty, tabela, historia, szkielety i linki są komponentami serwerowymi.
 
 Strona odczytuje parametry URL i przygotowuje opcjonalną edycję oraz historię przez funkcje z `products-view.ts`. Na zwykłym `/` nie powoduje to zapytań o produkt ani historię. Formularze, karty i nagłówek tabeli są renderowane od razu w docelowym układzie.
 
-W całym panelu są tylko dwie granice `Suspense`: `ForbiddenPhrasesList` wewnątrz karty fraz i `ProductRows` wewnątrz `TableBody`. Każdy z tych komponentów sam pobiera dane przez serwis i repozytorium. Szkielety zastępują tylko zawartość listy i wiersze. Lista fraz ma stały obszar wysokości `h-32`, a tabela `h-80`, z przewijaniem i zarezerwowanym miejscem na pasek przewijania. Kolumny mają ustalone szerokości. Wymiary te dotyczą układu zewnętrznego; komponenty shadcn zachowują domyślne style.
+W całym panelu są tylko dwie granice `Suspense`: `ForbiddenPhrasesList` wewnątrz karty fraz i `ProductRows` wewnątrz `TableBody`. Każdy z tych komponentów sam pobiera dane przez serwis i repozytorium. Szkielety zastępują tylko zawartość listy i wiersze. W układzie dwóch kolumn karta fraz ma wysokość formularza produktu. Lista zajmuje pozostałe miejsce w shadcn `ScrollArea`; nadmiar badge’y przewija się wewnątrz karty, bez jej rozciągania. Na telefonie obszar listy ma wysokość `h-48`. Tabela zachowuje wysokość `h-80`, przewijanie i ustalone szerokości kolumn.
 
 `getProductSelection` w `server/products-view.ts` interpretuje URL, a React `cache` współdzieli wynik tego odczytu w ramach jednego renderowania żądania. `getEditingProduct` i `getSelectedHistory` obsługują osobne zapytania oraz oczekiwane błędy. Nie tworzy to trwałego cache danych magazynowych.
 
-Formularz używa bezpośrednio `Input` i części `Select` z `src/components/ui`. Cena i ilość to standardowe `Input type="number"`; nazwa i fraza używają tekstowego `Input`. `Select` otrzymuje `name="category"`, więc wybrana kategoria trafia do `FormData`. Domyślne `Field`, `FieldLabel`, `FieldDescription` i `FieldError` zastępują wcześniejsze własne komponenty formularza; powiązania `id`, `htmlFor`, `aria-describedby` oraz `aria-invalid` są przekazywane bezpośrednio do kontrolek. Przejścia listy i pulsowanie szkieletów pochodzą z komponentów shadcn oraz `tw-animate-css`; projekt nie dodaje własnych animacji CSS.
+Formularz używa komponentów z `src/components/ui`. Cena i ilość składają się z `InputGroupInput type="number"` oraz `InputGroupAddon` z przyciskami po obu stronach. Komponent `number-input.tsx` obsługuje zmianę stanu; natywne `stepUp()` i `stepDown()` respektują `min`, `max` i krok: `0.01` dla ceny oraz `1` dla ilości. Ukryte są wyłącznie strzałki przeglądarki; pozostają ręczne wpisywanie, klawiatura i przekazywanie wartości przez `FormData`. Nazwa i fraza używają tekstowego `Input`. `Select` otrzymuje `name="category"`, więc wybrana kategoria trafia do `FormData`. Domyślne `Field`, `FieldLabel`, `FieldDescription` i `FieldError` obsługują etykiety i błędy pól. Powiązania `id`, `htmlFor`, `aria-describedby` oraz `aria-invalid` są przekazywane do kontrolek. Animacje pochodzą z komponentów shadcn oraz `tw-animate-css`; projekt nie dodaje własnych animacji CSS.
 
-`Toaster` z `src/components/ui/toast.tsx` jest zamontowany raz w głównym layoucie. Dodanie produktu i frazy wywołuje `withActionToast` w obsłudze akcji, bez obserwowania stanu formularza przez efekt. Gotowe typy `success` i `error` dobierają ikony i wygląd; błędy pól nadal są widoczne przy kontrolkach. Komunikaty ogólne nie zwiększają wysokości formularza.
+`Toaster` z `src/components/ui/toast.tsx` jest zamontowany raz w głównym layoucie. Dodanie produktu i frazy wywołuje `withActionToast` w obsłudze akcji, bez obserwowania stanu formularza przez efekt. Gotowe typy `success` i `error` dobierają ikony. Tokeny w `globals.css` nadają toastom sukcesu odcienie zieleni, a błędom czerwieni, osobno dla jasnego i ciemnego motywu. Pozostałe style i animacje komponentu pozostają domyślne. Błędy pól nadal są widoczne przy kontrolkach. Komunikaty ogólne nie zwiększają wysokości formularza. Globalna reguła ustawia `cursor: pointer` dla aktywnych przycisków.
 
 Po edycji lub usunięciu serwer przekierowuje na `/?notice=KOD&noticeId=UUID`. `NotificationToast` pokazuje komunikat raz i usuwa te dwa parametry przez `router.replace` z `scroll: false`, aby adres i stan routera były zgodne. Osobny UUID rozróżnia kolejne identyczne komunikaty. Ten sam komponent prezentuje błędy parametrów edycji i historii.
 
 Pusta tabela zawiera standardowy shadcn `Empty`: ikonę, tytuł „Brak produktów” oraz wskazówkę dodania pierwszego produktu. Data Table w dokumentacji shadcn jest wzorcem rozbudowy komponentu `Table`, nie osobnym gotowym komponentem. Projekt zachowuje serwerowe wiersze i dwie granice `Suspense`, bez dodatkowej biblioteki do sortowania i filtrowania.
+
+Pusta lista fraz również używa shadcn `Empty`, z tytułem „Brak zabronionych fraz” i wskazówką dodania pierwszej frazy. Stan ten wyświetla `ForbiddenPhrasesList` po zakończeniu odczytu, wewnątrz tego samego `ScrollArea`.
 
 ### Typy propsów tras
 
@@ -459,7 +463,7 @@ Parametry panelu:
 
 Panel korzysta ze standardowego dynamicznego renderowania App Router, bez flag `cacheComponents` i `partialPrefetching`. Pozwala to rozwiązać parametry żądania przed renderowaniem formularza i pozostawić `Suspense` wyłącznie przy dwóch listach. Dane magazynowe nie są buforowane między żądaniami.
 
-`src/app/globals.css` zawiera domyślny neutralny motyw z dokumentacji shadcn, importy `shadcn/tailwind.css` i `tw-animate-css` oraz przypisanie fontów Geist. `ThemeProvider` z `next-themes` w głównym layoucie ustawia standardową klasę `dark` zgodnie z motywem systemu. Nie ma własnych kolorów komponentów ani własnych animacji.
+`src/app/globals.css` zawiera domyślny neutralny motyw z dokumentacji shadcn, importy `shadcn/tailwind.css` i `tw-animate-css` oraz przypisanie fontów Geist. `ThemeProvider` z `next-themes` w głównym layoucie ustawia standardową klasę `dark` zgodnie z motywem systemu. Zielone i czerwone tokeny statusów dotyczą wyłącznie toastów. Arkusz ustawia też kursor aktywnych przycisków oraz ukrywa natywne strzałki pól liczbowych. Projekt nie dodaje własnych animacji.
 
 ## 11. Baza danych i migracje
 
