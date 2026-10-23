@@ -23,14 +23,14 @@ Dodatkowy panel WWW na `/` umożliwia demonstrację tych samych operacji. Panel 
 
 | Wymaganie ze specyfikacji | Miejsce realizacji | Jak sprawdzić |
 | --- | --- | --- |
-| CRUD produktów i zapis w bazie — zadanie podstawowe na 3,0 | [Route Handlers produktów](src/app/api/v1/products/route.ts), [ProductService](src/services/product.service.ts), [ProductRepository](src/repositories/product.repository.ts) | Żądania HTTP opisane w sekcji 5; test `creates, gets, lists, updates and deletes a product`. |
-| Nazwa: 3–20 znaków, litery i cyfry, unikalność | [product.schema.ts](src/lib/validation/product.schema.ts), `ProductService.assertNameAvailable`, [indeks unikalny](prisma/migrations/20261023190000_product_consistency/migration.sql) | Błędna nazwa → `400`; duplikat → `409`. |
+| CRUD produktów i zapis w bazie — zadanie podstawowe na 3,0 | [Route Handlers produktów](src/app/api/v1/products/route.ts), [ProductService](src/server/services/product.service.ts), [ProductRepository](src/server/repositories/product.repository.ts) | Żądania HTTP opisane w sekcji 5; test `creates, gets, lists, updates and deletes a product`. |
+| Nazwa: 3–20 znaków, litery i cyfry, unikalność | [product.schema.ts](src/server/validation/product.schema.ts), `ProductService.assertNameAvailable`, [indeks unikalny](prisma/migrations/20261023190000_product_consistency/migration.sql) | Błędna nazwa → `400`; duplikat → `409`. |
 | Cena zależna od kategorii | [product-rules.ts](src/lib/product-rules.ts), `checkCategoryPriceIssue` w schemacie produktu | Cena elektroniki `49` → `400` z polem `price`; `50` jest poprawne. |
 | Ilość: liczba całkowita, co najmniej 0 | `productBaseSchema.quantity` | `-1` i `1.5` → `400`; `0` jest poprawne. |
-| Błędy wskazujące niepoprawne pole | [errors.ts](src/lib/errors.ts), [http.ts](src/lib/http.ts) | Odpowiedź zawiera `error.details[].field`. |
-| Dynamiczne zabronione frazy — +0,5 | [ForbiddenPhraseService](src/services/forbidden-phrase.service.ts), [API fraz](src/app/api/v1/forbidden-phrases/route.ts) | Dodaj frazę, spróbuj dodać i edytować pasującą nazwę; usuń frazę i ponów zapis. |
-| Architektura N-Layer — +0,5 | `src/app/api` → `src/services` → `src/repositories` | Prześledź `POST` → `ProductService.create` → `ProductRepository.create`. |
-| Historia zmian produktów w bazie — +0,5 | `ProductService.create/update/delete`, [HistoryRepository](src/repositories/history.repository.ts), model `ProductHistory` | Odczytaj `/products/{id}/history` przed usunięciem i po nim. |
+| Błędy wskazujące niepoprawne pole | [errors.ts](src/server/errors.ts), [http.ts](src/server/api/http.ts) | Odpowiedź zawiera `error.details[].field`. |
+| Dynamiczne zabronione frazy — +0,5 | [ForbiddenPhraseService](src/server/services/forbidden-phrase.service.ts), [API fraz](src/app/api/v1/forbidden-phrases/route.ts) | Dodaj frazę, spróbuj dodać i edytować pasującą nazwę; usuń frazę i ponów zapis. |
+| Architektura N-Layer — +0,5 | `src/app/api` → `src/server/services` → `src/server/repositories` | Prześledź `POST` → `ProductService.create` → `ProductRepository.create`. |
+| Historia zmian produktów w bazie — +0,5 | `ProductService.create/update/delete`, [HistoryRepository](src/server/repositories/history.repository.ts), model `ProductHistory` | Odczytaj `/products/{id}/history` przed usunięciem i po nim. |
 | Testy integracyjne reguł domenowych — +0,5 | [tests](tests), [konfiguracja Vitest](vitest.config.mts) | `pnpm test`; scenariusze API używają `fetch` i działającego serwera. |
 | SOLID, DRY, KISS; właściwe metody HTTP i nazwy endpointów | Wspólne serwisy, schematy walidacji i repozytoria; rzeczowniki w adresach API | Opis odpowiedzialności warstw w sekcji 7 oraz tabeli metod w sekcji 5. |
 
@@ -46,6 +46,7 @@ Punktacja opisuje pozycje ze specyfikacji; ostateczną ocenę ustala prowadzący
 | Lokalny Prisma Postgres (`prisma dev`) | PostgreSQL uruchamiany lokalnie na silniku PGlite, z danymi zapisywanymi na dysku. |
 | `@prisma/adapter-pg`, `pg` | Połączenie Prisma Client z bazą przez protokół PostgreSQL. |
 | Zod 4 | Walidacja rzeczywistych danych wejściowych w trakcie działania programu. |
+| T3 Env, `server-only` | Walidacja konfiguracji i ochrona modułów backendu przed importem do klienta. |
 | Tailwind CSS 4, lokalne komponenty UI | Wygląd panelu. Komponenty `src/components/ui` mają interfejs inspirowany shadcn/ui. |
 | Vitest 5 | Testy integracyjne wymagań domenowych. |
 
@@ -118,7 +119,7 @@ Serwer Next.js dla testów jest uruchamiany i zatrzymywany automatycznie. Instan
 
 Wymaganie mówi o trwałym przechowywaniu informacji w bazie i nie narzuca sposobu jej uruchamiania. `prisma dev` udostępnia lokalny silnik PostgreSQL/PGlite: aplikacja wykonuje rzeczywiste zapytania, transakcje i migracje, a dane pozostają po ponownym uruchomieniu tej samej instancji. To spełnia wymaganie bazy; Prisma ORM jest narzędziem dostępu do niej. Sposób działania i trwałość nazwanych instancji opisuje [dokumentacja lokalnego Prisma Postgres](https://www.prisma.io/docs/local-development/postgres).
 
-Lokalny silnik obsługuje jedno aktywne połączenie naraz. Dlatego [prisma.ts](src/lib/prisma.ts) ustawia pulę na jedno połączenie i szybko zwalnia bezczynne połączenia. Pozwala to współdzielić instancję między procesami. Testy równoczesnych żądań sprawdzają wyniki API również w tym środowisku; pełne przeploty wielu połączeń wymagają zwykłego serwera PostgreSQL.
+Lokalny silnik obsługuje jedno aktywne połączenie naraz. Dlatego [db.ts](src/server/db.ts) ustawia pulę na jedno połączenie i szybko zwalnia bezczynne połączenia. Pozwala to współdzielić instancję między procesami. Testy równoczesnych żądań sprawdzają wyniki API również w tym środowisku; pełne przeploty wielu połączeń wymagają zwykłego serwera PostgreSQL.
 
 ## 4. Struktura projektu
 
@@ -131,40 +132,66 @@ src/
 │   │   ├── products/[id]/history/route.ts    GET historii
 │   │   ├── forbidden-phrases/route.ts        GET i POST fraz
 │   │   └── forbidden-phrases/[id]/route.ts   DELETE frazy
-│   ├── page.tsx                             serwerowe składanie panelu
-│   ├── actions.ts                           zapis formularzy
+│   ├── page.tsx                             nagłówek i granica Suspense
 │   ├── layout.tsx                           dokument HTML i metadane
 │   ├── error.tsx                            ekran awarii i ponowienie
+│   ├── favicon.ico                          automatycznie wykrywana ikona strony
+│   └── not-found.tsx                         prosta strona 404
+├── styles/
 │   └── globals.css                          style globalne
-├── services/
-│   ├── product.service.ts                   reguły produktów i transakcje
-│   ├── forbidden-phrase.service.ts          operacje na frazach
-│   └── mappers.ts                           DTO produktów i historii
-├── repositories/
-│   ├── product.repository.ts                zapytania do Product
-│   ├── forbidden-phrase.repository.ts       zapytania do ForbiddenPhrase
-│   └── history.repository.ts                zapis i odczyt historii
-├── lib/
+├── server/                                  moduły oznaczone server-only
+│   ├── db.ts                                współdzielony klient Prisma
+│   ├── actions.ts                           Server Actions formularzy
+│   ├── products-view.ts                     przygotowanie danych widoku panelu
+│   ├── api/http.ts                          odpowiedzi HTTP i odczyt wejścia
+│   ├── services/                            reguły biznesowe i transakcje
+│   │   ├── product.service.ts
+│   │   └── forbidden-phrase.service.ts
+│   ├── repositories/                        zapytania do tabel
+│   │   ├── product.repository.ts
+│   │   ├── forbidden-phrase.repository.ts
+│   │   └── history.repository.ts
 │   ├── validation/                          schematy Zod i walidacja ID
-│   ├── product-rules.ts                     kategorie i zakresy cen/liczb
-│   ├── errors.ts                            typy błędów aplikacji
-│   ├── http.ts                              odpowiedzi HTTP i parsowanie wejścia
-│   ├── action-state.ts                      stan formularzy i komunikaty
+│   ├── errors.ts                            błędy aplikacji
 │   ├── database-errors.ts                   rozpoznawanie błędów Prisma
-│   └── prisma.ts                            współdzielony klient bazy
+│   └── mappers.ts                           konwersja rekordów bazy na DTO
 ├── components/
-│   ├── products/                            formularze, tabela, historia i frazy
-│   └── ui/                                  podstawowe komponenty UI
-└── generated/prisma/                        wygenerowany klient Prisma
+│   ├── ui/                                  wspólne komponenty UI (bez zmian)
+│   ├── action-link.tsx                      link stylizowany jako przycisk
+│   ├── forbidden-phrase-form.tsx            formularz dodawania fraz
+│   ├── forbidden-phrases-card.tsx           lista i zarządzanie frazami
+│   ├── product-form-card.tsx                serwerowa otoczka formularza
+│   ├── product-form.tsx                     stan formularza produktu
+│   ├── product-history-card.tsx             tabela historii
+│   ├── products-content.tsx                 serwerowe składanie panelu
+│   ├── products-table-card.tsx              tabela produktów
+│   └── submit-button.tsx                    stan wysyłania formularza
+├── lib/                                     kod wspólny serwera i klienta
+│   ├── product-types.ts                     typy DTO, bez kodu serwerowego
+│   ├── product-rules.ts                     kategorie i zakresy cen/liczb
+│   ├── action-state.ts                      stan formularzy i komunikaty
+│   └── utils.ts                             pomocnicze funkcje UI
+└── env.ts                                   walidacja środowiska przez T3 Env
 prisma/
 ├── schema.prisma                            modele i enumy
+├── generated/                               kod generowany przez Prisma
 └── migrations/                              migracje SQL
 prisma.config.ts                             konfiguracja CLI i bazy shadow
 tests/                                       testy wymagań oraz ich infrastruktura
 vitest.config.mts                            konfiguracja testów
 ```
 
-Alias `@/` oznacza katalog `src/`. Plików `src/generated/prisma` nie edytuje się ręcznie — aktualizuje je `pnpm db:generate`.
+Podział backendu opiera się na [Folder Structure (App) z Create T3 App](https://create.t3.gg/en/folder-structure-app?packages=nextauth%2Cprisma%2Ctailwind): `server` zawiera logikę backendu, a `server/db.ts` klienta Prisma. `app` przechowuje routing i ekrany, a `styles/globals.css` style globalne. Wszystkie komponenty panelu znajdują się bezpośrednio w `src/components`; jedyny podkatalog to `ui`. `prisma` pozostaje w katalogu głównym. Serwisy i repozytoria zachowują architekturę N-Layer wymaganą w zadaniu.
+
+Każdy ręcznie pisany moduł w `src/server` importuje `server-only`. Next.js zgłosi błąd budowania przy próbie zwykłego importu takiego modułu do komponentu klienckiego. Plik `server/actions.ts` dodatkowo ma `"use server"`, więc formularz może importować jego funkcje jako zdalne Server Actions. Są to dwa różne mechanizmy: znacznik `server-only` chroni granicę modułów, a `"use server"` definiuje akcje.
+
+`src/lib` zawiera dane i typy współdzielone, bez dostępu do bazy. Typy DTO są w `product-types.ts`, a funkcje mapujące rekordy Prisma w `server/mappers.ts`. Kod wygenerowany przez Prisma pozostaje poza `server`, ponieważ udostępnia również typy i enumy bezpieczne dla klienta. Dostęp do bazy przechodzi przez chroniony moduł `server/db.ts`.
+
+`src/env.ts` używa `@t3-oss/env-nextjs` i Zod do walidacji adresów baz oraz `NODE_ENV`. Klient bazy i konfiguracja CLI Prisma korzystają z tego samego modułu środowiska. Komponenty UI w `src/components/ui` pozostają współdzielone i nie były zmieniane.
+
+Alias `@/` oznacza katalog `src/`, a `@generated/` katalog `prisma/generated/`. Wygenerowany klient jest ignorowany przez Git; po pobraniu projektu odtwarza go `pnpm db:generate`. Plików klienta nie edytuje się ręcznie. Lokalizację określa `output = "./generated"` w `prisma/schema.prisma`, względem pliku schematu. Importy klienta bazy wskazują `@generated/client`, a typów i enumów `@generated/enums`.
+
+Folder `docs/` zawiera lokalny audyt i ściągawkę prezentacji. Jest ignorowany przez Git, więc nie pojawi się po sklonowaniu repozytorium; dokumentacją przechowywaną w repozytorium jest ten README.
 
 ## 5. Zadanie podstawowe: CRUD i walidacja
 
@@ -193,12 +220,12 @@ Folder `[id]` w Next.js reprezentuje parametr adresu, np. `/products/7` wskazuje
 
 | Pole | Reguła | Miejsce sprawdzenia |
 | --- | --- | --- |
-| `name` | 3–20 znaków Unicode, wyłącznie litery i cyfry dziesiętne. Skrajne białe znaki są obcinane, tekst normalizowany do NFC. | `productBaseSchema` w [product.schema.ts](src/lib/validation/product.schema.ts). |
+| `name` | 3–20 znaków Unicode, wyłącznie litery i cyfry dziesiętne. Skrajne białe znaki są obcinane, tekst normalizowany do NFC. | `productBaseSchema` w [product.schema.ts](src/server/validation/product.schema.ts). |
 | Unikalność `name` | Bez rozróżniania wielkości liter, również przy równoczesnych zapisach. | `assertNameAvailable` w serwisie i `UNIQUE(lower(name))` w bazie. |
 | `category` | `ELECTRONICS`, `BOOKS` lub `CLOTHING`. | Enum `Category` i schemat Zod. |
 | `price` | Liczba, maksymalnie dwa miejsca po przecinku, zakres zależny od kategorii. | `checkCategoryPriceIssue` i `PRICE_RANGES`. |
 | `quantity` | Liczba całkowita od 0 do 2 147 483 647. | `productBaseSchema`; górna granica odpowiada `INTEGER` w bazie. |
-| ID w adresie | Liczba całkowita od 1 do 2 147 483 647. | [validateId](src/lib/validation/id.schema.ts), wywoływane przez `readId` i serwisy. |
+| ID w adresie | Liczba całkowita od 1 do 2 147 483 647. | [validateId](src/server/validation/id.schema.ts), wywoływane przez `readId` i serwisy. |
 
 | Kategoria | Minimum | Maksimum |
 | --- | --- | --- |
@@ -244,7 +271,7 @@ Błędy aplikacji mają postać:
 }
 ```
 
-`details` jest opcjonalne. `field` określa pole do poprawy. Typy `ValidationError`, `NotFoundError`, `ConflictError` znajdują się w [errors.ts](src/lib/errors.ts), a ich mapowanie na HTTP w [http.ts](src/lib/http.ts). Odpowiedzi frameworka, np. `405`, nie muszą mieć tego formatu. Odpowiedź `204` nie zawiera JSON-a.
+`details` jest opcjonalne. `field` określa pole do poprawy. Typy `ValidationError`, `NotFoundError`, `ConflictError` znajdują się w [errors.ts](src/server/errors.ts), a ich mapowanie na HTTP w [http.ts](src/server/api/http.ts). Odpowiedzi frameworka, np. `405`, nie muszą mieć tego formatu. Odpowiedź `204` nie zawiera JSON-a.
 
 ### Przykład CRUD przez HTTP
 
@@ -277,7 +304,7 @@ Lista jest dynamiczna i zapisana w tabeli `ForbiddenPhrase`. Nie jest stałą za
 | `POST /api/v1/forbidden-phrases` | Dodanie, np. `{ "phrase": "promo" }`. |
 | `DELETE /api/v1/forbidden-phrases/{id}` | Usunięcie frazy. |
 
-[ForbiddenPhraseService](src/services/forbidden-phrase.service.ts) sprawdza dane i wykonuje operacje przez [ForbiddenPhraseRepository](src/repositories/forbidden-phrase.repository.ts). Fraza po `trim()` ma 1–50 znaków i jest przechowywana małymi literami.
+[ForbiddenPhraseService](src/server/services/forbidden-phrase.service.ts) sprawdza dane i wykonuje operacje przez [ForbiddenPhraseRepository](src/server/repositories/forbidden-phrase.repository.ts). Fraza po `trim()` ma 1–50 znaków i jest przechowywana małymi literami.
 
 `ProductService.assertNameAvailable` korzysta z `findContainedIn(name, tx)`. Sprawdzany jest **fragment nazwy**, bez rozróżniania wielkości liter. Fraza `promo` blokuje więc `PromoLaptop` i `SuperPromo1` zarówno przy `POST`, jak i `PUT` produktu. Odpowiedź to `400` z polem `name`.
 
@@ -298,7 +325,7 @@ Odczyt panelu → Server Component ────────┘
 | HTTP | Odczyt żądania i zwrócenie statusu/JSON. | `readJson`, `readId`, `ok`, `created`, `noContent`, `withErrorHandling`. |
 | Service | Reguły, kolejność operacji i granice transakcji. | `validateProductInput`, `assertNameAvailable`, `$transaction`. |
 | Repository | Konkretne zapytania do tabel. | `findMany`, `findUnique`, `create`, `update`, `delete`, `FOR UPDATE`. |
-| Infrastruktura | Utworzenie klienta i połączenia. | [prisma.ts](src/lib/prisma.ts), `PrismaPg`, `PrismaClient`. |
+| Infrastruktura | Utworzenie klienta i połączenia. | [db.ts](src/server/db.ts), `PrismaPg`, `PrismaClient`. |
 
 Podział wspiera czytelność i zasady zadania:
 
@@ -321,7 +348,7 @@ Historia znajduje się w tabeli `ProductHistory`. Każdy wpis zawiera `productId
 | `UPDATE` | Stan przed zmianą. | Stan po zmianie. |
 | `DELETE` | Stan przed usunięciem. | `null`. |
 
-Zapis odbywa się w [ProductService](src/services/product.service.ts), a dostęp do tabeli zapewnia [HistoryRepository](src/repositories/history.repository.ts). Produkt i wpis historii korzystają z tego samego `tx`. Awaria historii wycofuje całą operację.
+Zapis odbywa się w [ProductService](src/server/services/product.service.ts), a dostęp do tabeli zapewnia [HistoryRepository](src/server/repositories/history.repository.ts). Produkt i wpis historii korzystają z tego samego `tx`. Awaria historii wycofuje całą operację.
 
 Blokada `SELECT … FOR UPDATE` zapewnia prawidłowy stan początkowy kolejnych edycji. Historia jest sortowana po ID wpisu, ponieważ czas rozpoczęcia transakcji może poprzedzać oczekiwanie na blokadę.
 
@@ -353,6 +380,8 @@ Zestaw obejmuje **100 testów w 5 plikach**, bez testów stanu UI i konfiguracji
 4. Przed każdym testem czyści trzy tabele przez `TRUNCATE … RESTART IDENTITY CASCADE`.
 5. Po zakończeniu testów zatrzymuje serwer Next.js.
 
+Vitest uruchamia kod serwera poza kompilatorem Next.js, dlatego `tests/setup.ts` mockuje jedynie znacznik `server-only`. Serwisy, repozytoria i połączenia z bazą pozostają prawdziwe; build aplikacji nadal egzekwuje granicę klient/serwer.
+
 Testy scenariuszy API spełniają wymaganie komunikacji przez HTTP. Trzy dodatkowe testy awarii historii wywołują serwis bezpośrednio i przekazują repozytorium rzucające błąd. Pozwala to wymusić problem zapisu historii, przy zachowaniu prawdziwej bazy. Te testy dotyczą atomowości historii wymaganej w zadaniu.
 
 Instancja testowa musi być odseparowana od aplikacji. [database-safety.ts](tests/database-safety.ts) odrzuca wskazanie tej samej bazy. Dla lokalnego Prisma pozwala użyć `template1` na oddzielnym porcie; dla zwykłego PostgreSQL wymaga nazwy z członem `test`. Pliki testów wykonują się kolejno, ponieważ współdzielą czyszczoną bazę.
@@ -369,23 +398,43 @@ pnpm test tests/validation.test.ts
 
 | Plik | Rola w demonstracji |
 | --- | --- |
-| [page.tsx](src/app/page.tsx) | Pobiera produkty, frazy i wybraną historię na serwerze; składa ekran. |
-| [actions.ts](src/app/actions.ts) | Odczytuje `FormData`, wywołuje serwisy, zwraca komunikaty i odświeża widok. |
-| [product-form-card.tsx](src/components/products/product-form-card.tsx) | Na serwerze przygotowuje formularz edycji/dodania, opcje kategorii i przyciski. |
-| [product-form.tsx](src/components/products/product-form.tsx) | Obsługuje stan błędów i zachowuje wartości pól przez `useActionState`. |
-| [products-table-card.tsx](src/components/products/products-table-card.tsx) | Wyświetla produkty i akcje edycji, historii oraz usuwania. |
-| [forbidden-phrases-card.tsx](src/components/products/forbidden-phrases-card.tsx) | Lista fraz, formularz dodania i usuwanie. |
-| [product-history-card.tsx](src/components/products/product-history-card.tsx) | Tabela poprzednich i nowych stanów. |
+| [page.tsx](src/app/page.tsx) | Definiuje nagłówek strony i granicę `Suspense` z komunikatem ładowania. |
+| [layout.tsx](src/app/layout.tsx) | Wspólny dokument HTML, język polski, fonty, metadane i import stylów globalnych. |
+| [products-content.tsx](src/components/products-content.tsx) | Serwerowy komponent składający karty panelu i wyświetlający komunikaty. |
+| [products-view.ts](src/server/products-view.ts) | Waliduje parametry URL, pobiera równolegle dane przez serwisy i przygotowuje stan edycji oraz historii. |
+| [actions.ts](src/server/actions.ts) | Odczytuje `FormData`, wywołuje serwisy, zwraca komunikaty i odświeża widok. |
+| [product-form-card.tsx](src/components/product-form-card.tsx) | Na serwerze przygotowuje formularz edycji/dodania, opcje kategorii i przyciski. |
+| [product-form.tsx](src/components/product-form.tsx) | Obsługuje stan błędów i zachowuje wartości pól przez `useActionState`. |
+| [products-table-card.tsx](src/components/products-table-card.tsx) | Wyświetla produkty i akcje edycji, historii oraz usuwania. |
+| [forbidden-phrases-card.tsx](src/components/forbidden-phrases-card.tsx) | Lista fraz, formularz dodania i usuwanie. |
+| [product-history-card.tsx](src/components/product-history-card.tsx) | Tabela poprzednich i nowych stanów. |
 | [error.tsx](src/app/error.tsx) | Obsługa nieoczekiwanej awarii odczytu i ponowienie przez `retry()`. |
+| [not-found.tsx](src/app/not-found.tsx) | Serwerowa strona 404 z linkiem powrotu do panelu. |
+| [globals.css](src/styles/globals.css) | Style globalne importowane przez główny layout. |
+| [favicon.ico](src/app/favicon.ico) | Ikona dostępna pod `/favicon.ico`; Next.js automatycznie dodaje jej metadane na podstawie pliku w `app`. |
 
 Strona, karty, tabela, historia i linki są komponentami serwerowymi. Formularze wymagają klienta do wyświetlania stanu akcji; `SubmitButton` korzysta z `useFormStatus`. Interaktywny jest również ekran ponawiania po błędzie.
 
+Przepływ odczytu panelu: `page.tsx` → `ProductsContent` → `getProductsView` → serwisy → repozytoria → Prisma. Dzięki temu strona opisuje układ, komponent opisuje zawartość panelu, a moduł `server/products-view.ts` przygotowuje dane. Małe funkcje pomocnicze do odczytu parametrów pozostają prywatne w tym module.
+
+### Typy propsów tras
+
+`LayoutProps<"/">` w głównym layoucie oznacza propsy layoutu przypisanego do `/`, w tym `children`. `PageProps<"/">` w stronie określa propsy strony, m.in. asynchroniczne `searchParams`. Zapis `PageProps<"/">["searchParams"]` wybiera z tego typu sam typ parametrów zapytania; używają go `ProductsContent` i `getProductsView`.
+
+Są to globalne typy generowane przez Next.js podczas `pnpm dev`, `pnpm build` lub `pnpm typecheck` — ostatni skrypt uruchamia `next typegen` przed TypeScriptem. Nie wymagają importu. Typowanie pomaga podczas pisania kodu; wartości dostarczone w URL nadal przechodzą walidację `validateId` na serwerze. Definicje wygenerowane przez Next.js znajdują się w `.next/types`, osobno od klienta Prisma w `prisma/generated`.
+
+### Odczyt i zapis panelu
+
 Panel nie wywołuje własnych endpointów REST. Odczyt wykonuje przez serwisy w Server Components, a zapis przez Server Actions. Testy HTTP osobno weryfikują REST API. Po zapisie akcja wywołuje `revalidatePath("/")`; udana edycja wykonuje serwerowe `redirect` poza blokiem przechwytywania błędów.
+
+Nieistniejący adres, np. `/nieistniejaca-strona`, wyświetla prostą stronę 404 z przyciskiem „Wróć do produktów”. Implementuje ją serwerowy `app/not-found.tsx`. Błędy nieistniejącego produktu w REST API nadal mają postać JSON-a ze statusem `404`.
 
 Parametry panelu:
 
 - `/?edit=ID` — wybór produktu do edycji;
 - `/?history=ID` — wyświetlenie historii, również po usunięciu produktu.
+
+`getProductsView` sprawdza również pojedyncze wystąpienie ID: np. `?edit=1&edit=2` daje komunikat o niepoprawnym identyfikatorze. Parametr `notice` wybiera komunikat ze stałej `NOTICES`; nieznane wartości są pomijane. Oczekiwany brak produktu jest komunikatem w panelu, a nieoczekiwana awaria odczytu trafia do `error.tsx`.
 
 W [next.config.ts](next.config.ts) włączono `cacheComponents` i `partialPrefetching`. `Suspense` rozdziela otoczkę strony od dynamicznego odczytu. Kolekcje API używają `connection()`. W kodzie nie ma `use cache` buforującego listę magazynową między żądaniami.
 
@@ -430,7 +479,7 @@ HAVING count(*) > 1;
 | `pnpm db:test` | Osobna lokalna instancja `lab01-test`. |
 | `pnpm db:deploy` | Zastosowanie istniejących migracji na bazie aplikacji. |
 | `pnpm db:migrate --name zmiana` | Utworzenie migracji po zmianie modelu. |
-| `pnpm db:generate` | Generowanie klienta Prisma. |
+| `pnpm db:generate` | Odtworzenie ignorowanego klienta w `prisma/generated`; wymagane po sklonowaniu i po zmianie schematu. |
 | `pnpm db:studio` | Przeglądanie tabel bazy aplikacji. |
 | `pnpm dev` | Serwer aplikacji na porcie 3000. |
 | `pnpm test` | Testy wymagań zadania. |
@@ -446,4 +495,6 @@ Najczęstsze problemy:
 - **Zajęty port instancji:** zakończ wcześniejszy proces lub zmień porty CLI oraz odpowiadające im adresy w `.env`.
 - **Zajęty port testowego Next.js:** użyj `TEST_PORT=3102 pnpm test`.
 - **Brak tabel:** uruchom bazę i wykonaj `pnpm db:deploy`.
+- **Brak modułu `@generated/client` lub `@generated/enums`:** wykonaj `pnpm db:generate`, a potem ponów build, testy lub kontrolę typów.
+- **Nieznany typ `LayoutProps` albo `PageProps`:** wykonaj `pnpm typecheck`, aby wygenerować typy tras Next.js.
 - **Błąd pobierania fontów przy budowaniu:** `next/font/google` potrzebuje dostępu do sieci podczas pobierania Geist.
