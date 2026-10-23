@@ -9,6 +9,10 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
+    "db:dev": "prisma dev --name lab01 --port 51213 --db-port 51214 --shadow-db-port 51215",
+    "db:test": "prisma dev --name lab01-test --port 51313 --db-port 51314 --shadow-db-port 51315",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate"
   },

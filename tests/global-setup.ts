@@ -1,6 +1,7 @@
 import { execSync, spawn, type ChildProcess } from "node:child_process";
 import "dotenv/config";
 import type { TestProject } from "vitest/node";
+import { testDatabaseUrl } from "./database-safety";
 
 const PORT = Number(process.env.TEST_PORT ?? 3100);
 const BASE_URL = `http://localhost:${PORT}`;
@@ -12,14 +13,6 @@ declare module "vitest" {
   }
 }
 
-function testDatabaseUrl() {
-  const url = process.env.TEST_DATABASE_URL;
-  if (!url) {
-    throw new Error("TEST_DATABASE_URL is not set (see .env.example)");
-  }
-  return url;
-}
-
 async function waitForServer(server: ChildProcess) {
   const deadline = Date.now() + STARTUP_TIMEOUT_MS;
   while (Date.now() < deadline) {
@@ -28,7 +21,7 @@ async function waitForServer(server: ChildProcess) {
     }
     try {
       const response = await fetch(`${BASE_URL}/api/v1/products`);
-      if (response.status < 500) return;
+      if (response.status === 200) return;
     } catch {}
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
@@ -36,11 +29,11 @@ async function waitForServer(server: ChildProcess) {
 }
 
 export default async function setup(project: TestProject) {
-  const env = { ...process.env, DATABASE_URL: testDatabaseUrl() };
+  const env = { ...process.env, DATABASE_URL: testDatabaseUrl(process.env) };
 
-  execSync("npx prisma migrate deploy", { env, stdio: "inherit" });
+  execSync("pnpm exec prisma migrate deploy", { env, stdio: "inherit" });
 
-  const server = spawn("npx", ["next", "dev", "--port", String(PORT)], {
+  const server = spawn("pnpm", ["exec", "next", "dev", "--port", String(PORT)], {
     env: { ...env, NEXT_DIST_DIR: ".next-test", NEXT_TELEMETRY_DISABLED: "1" },
     stdio: process.env.DEBUG_SERVER ? "inherit" : "ignore",
     detached: true,
