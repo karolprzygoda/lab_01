@@ -19,7 +19,8 @@ export class HistoryRepository {
   findByProductId(productId: number, db: DbClient = prisma) {
     return db.productHistory.findMany({
       where: { productId },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      // Transaction timestamps can precede time spent waiting for a product lock.
+      orderBy: { id: "asc" },
     });
   }
 }

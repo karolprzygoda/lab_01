@@ -17,6 +17,12 @@ export class ProductRepository {
     return db.product.findUnique({ where: { id } });
   }
 
+  async findByIdForUpdate(id: number, db: DbClient) {
+    // The caller must keep the read, mutation and history write in one transaction.
+    await db.$queryRaw`SELECT "id" FROM "Product" WHERE "id" = ${id} FOR UPDATE`;
+    return this.findById(id, db);
+  }
+
   findByNameInsensitive(name: string, db: DbClient = prisma) {
     return db.product.findFirst({ where: { name: { equals: name, mode: "insensitive" } } });
   }
