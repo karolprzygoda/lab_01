@@ -1,6 +1,6 @@
 import { deleteForbiddenPhraseAction } from "@/server/actions";
-import { ForbiddenPhraseForm } from "@/components/products/forbidden-phrase-form";
-import { SubmitButton } from "@/components/products/submit-button";
+import { ForbiddenPhraseForm } from "@/components/forbidden-phrase-form";
+import { SubmitButton } from "@/components/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 

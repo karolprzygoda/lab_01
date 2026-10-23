@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { ActionLink } from "@/components/products/action-link";
+import { ActionLink } from "@/components/action-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,

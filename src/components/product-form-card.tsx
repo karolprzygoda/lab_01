@@ -1,9 +1,9 @@
-import { ProductForm } from "@/components/products/product-form";
+import { ProductForm } from "@/components/product-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ProductDto } from "@/lib/product-types";
 import { EMPTY_PRODUCT_VALUES } from "@/lib/action-state";
-import { ActionLink } from "@/components/products/action-link";
-import { SubmitButton } from "@/components/products/submit-button";
+import { ActionLink } from "@/components/action-link";
+import { SubmitButton } from "@/components/submit-button";
 import { CATEGORY_NAMES, PRICE_RANGES } from "@/lib/product-rules";
 import type { Category } from "@generated/enums";
 

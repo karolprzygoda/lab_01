@@ -1,8 +1,8 @@
 import { Suspense } from "react";
-import { ForbiddenPhrasesCard } from "@/components/products/forbidden-phrases-card";
-import { ProductFormCard } from "@/components/products/product-form-card";
-import { ProductHistoryCard } from "@/components/products/product-history-card";
-import { ProductsTableCard } from "@/components/products/products-table-card";
+import { ForbiddenPhrasesCard } from "@/components/forbidden-phrases-card";
+import { ProductFormCard } from "@/components/product-form-card";
+import { ProductHistoryCard } from "@/components/product-history-card";
+import { ProductsTableCard } from "@/components/products-table-card";
 import { NOTICES } from "@/lib/action-state";
 import { NotFoundError, ValidationError } from "@/server/errors";
 import { validateId } from "@/server/validation/id.schema";
