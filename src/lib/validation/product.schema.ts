@@ -1,20 +1,9 @@
 import { z } from "zod";
 import { Category } from "@/generated/prisma/enums";
 import { ValidationError } from "@/lib/errors";
+import { CATEGORY_NAMES, MAX_DATABASE_INT, PRICE_RANGES } from "@/lib/product-rules";
 
 export { Category };
-
-export const PRICE_RANGES: Record<Category, { min: number; max: number }> = {
-  ELECTRONICS: { min: 50, max: 50_000 },
-  BOOKS: { min: 5, max: 500 },
-  CLOTHING: { min: 10, max: 5_000 },
-};
-
-const CATEGORY_NAMES: Record<Category, string> = {
-  ELECTRONICS: "Elektronika",
-  BOOKS: "Książki",
-  CLOTHING: "Odzież",
-};
 
 const categorySchema = z.enum(Category, {
   error: `Kategoria musi być jedną z wartości: ${Object.values(Category).join(", ")}`,
@@ -30,15 +19,17 @@ export const productBaseSchema = z.object({
   name: z
     .string({ error: "Nazwa musi być tekstem" })
     .trim()
-    .min(3, "Nazwa musi mieć co najmniej 3 znaki")
-    .max(20, "Nazwa może mieć maksymalnie 20 znaków")
-    .regex(/^[\p{L}\p{N}]+$/u, "Nazwa może zawierać wyłącznie litery i cyfry"),
+    .normalize("NFC")
+    .refine((name) => [...name].length >= 3, "Nazwa musi mieć co najmniej 3 znaki")
+    .refine((name) => [...name].length <= 20, "Nazwa może mieć maksymalnie 20 znaków")
+    .regex(/^[\p{L}\p{Nd}]+$/u, "Nazwa może zawierać wyłącznie litery i cyfry"),
   category: categorySchema,
   price: priceSchema,
   quantity: z
     .number({ error: "Ilość musi być liczbą" })
     .int("Ilość musi być liczbą całkowitą")
-    .min(0, "Ilość musi być większa lub równa 0"),
+    .min(0, "Ilość musi być większa lub równa 0")
+    .max(MAX_DATABASE_INT, `Ilość może wynosić maksymalnie ${MAX_DATABASE_INT}`),
 });
 
 export function checkCategoryPriceIssue(input: unknown) {

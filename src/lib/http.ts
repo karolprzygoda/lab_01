@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { AppError, ValidationError } from "@/lib/errors";
+import { validateId } from "@/lib/validation/id.schema";
 
 export type IdRouteContext = { params: Promise<{ id: string }> };
 
@@ -61,11 +62,5 @@ export async function readJson(request: Request): Promise<unknown> {
 
 export async function readId({ params }: IdRouteContext): Promise<number> {
   const { id } = await params;
-  const value = Number(id);
-  if (!/^\d+$/.test(id) || !Number.isSafeInteger(value) || value < 1) {
-    throw new ValidationError([
-      { field: "id", message: "Identyfikator musi być dodatnią liczbą całkowitą" },
-    ]);
-  }
-  return value;
+  return validateId(id);
 }
