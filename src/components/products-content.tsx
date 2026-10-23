@@ -1,6 +1,7 @@
 import { ForbiddenPhrasesCard } from "@/components/forbidden-phrases-card";
 import { ProductFormCard } from "@/components/product-form-card";
-import { ProductHistoryCard } from "@/components/product-history-card";
+import { ProductHistoryDialog } from "@/components/product-history-dialog";
+import { ProductHistoryTable } from "@/components/product-history-table";
 import { ProductsTableCard } from "@/components/products-table-card";
 import { NotificationToast } from "@/components/notification-toast";
 import type { HistoryEntryDto, ProductDto } from "@/lib/product-types";
@@ -31,7 +32,11 @@ export function ProductsContent({
         <ForbiddenPhrasesCard />
       </div>
       <ProductsTableCard />
-      {history ? <ProductHistoryCard {...history} /> : null}
+      {history ? (
+        <ProductHistoryDialog key={history.productId} productId={history.productId}>
+          <ProductHistoryTable entries={history.entries} />
+        </ProductHistoryDialog>
+      ) : null}
     </div>
   );
 }

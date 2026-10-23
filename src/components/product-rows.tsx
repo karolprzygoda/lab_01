@@ -38,7 +38,7 @@ export async function ProductRows() {
       <TableCell>
         <div className="flex items-center gap-2">
           <ActionLink href={`/?edit=${product.id}`}>Edytuj</ActionLink>
-          <ActionLink href={`/?history=${product.id}`}>Historia</ActionLink>
+          <ActionLink id={`product-history-${product.id}`} href={`/?history=${product.id}`} scroll={false}>Historia</ActionLink>
           <form action={deleteProductAction.bind(null, product.id)}>
             <SubmitButton size="sm" variant="destructive">Usuń</SubmitButton>
           </form>
