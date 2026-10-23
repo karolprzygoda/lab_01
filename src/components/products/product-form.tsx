@@ -1,11 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { saveProductAction, type ActionState } from "@/app/actions";
-import { SubmitButton } from "@/components/products/submit-button";
-import { Button } from "@/components/ui/button";
+import { useActionState, type ReactNode } from "react";
+import { saveProductAction } from "@/app/actions";
+import type { ActionState, ProductFormValues } from "@/lib/action-state";
 import {
   Form,
   FormControl,
@@ -17,46 +14,27 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import type { Category } from "@/generated/prisma/enums";
-import type { ProductDto } from "@/services/mappers";
+import { MAX_DATABASE_INT } from "@/lib/product-rules";
 
-const CATEGORY_LABELS: Record<Category, string> = {
-  ELECTRONICS: "Elektronika (50–50 000 PLN)",
-  BOOKS: "Książki (5–500 PLN)",
-  CLOTHING: "Odzież (10–5 000 PLN)",
-};
-
-const initialState: ActionState = { ok: false };
-
-export function ProductForm({ editingProduct }: { editingProduct: ProductDto | null }) {
-  const [formKey, setFormKey] = useState(0);
-  const router = useRouter();
-
-  const [state, formAction] = useActionState(
-    async (prev: ActionState, formData: FormData) => {
-      const result = await saveProductAction(prev, formData);
-      if (result.ok) {
-        setFormKey((k) => k + 1);
-        if (editingProduct) {
-          router.push("/");
-        }
-      }
-      return result;
-    },
-    initialState,
-  );
+export function ProductForm({ productId, initialValues, categoryOptions, children }: {
+  productId?: number;
+  initialValues: ProductFormValues;
+  categoryOptions: ReactNode;
+  children: ReactNode;
+}) {
+  const initialState: ActionState<ProductFormValues> = { ok: false, revision: 0, values: initialValues };
+  const [state, formAction] = useActionState(saveProductAction, initialState);
+  const { values } = state;
 
   return (
     <Form
-      key={`${editingProduct?.id ?? "new"}-${formKey}`}
+      key={state.revision}
       action={formAction}
       errors={state.fieldErrors}
     >
-      {editingProduct && <input type="hidden" name="id" value={editingProduct.id} />}
+      {productId !== undefined ? <input type="hidden" name="id" value={productId} /> : null}
 
-      {state.message && !state.fieldErrors && (
-        <p className="text-xs font-medium text-red-600 dark:text-red-400">{state.message}</p>
-      )}
+      {state.message ? <p role={state.ok ? "status" : "alert"} className="text-sm">{state.message}</p> : null}
 
       <FormField name="name">
         <FormItem>
@@ -64,13 +42,13 @@ export function ProductForm({ editingProduct }: { editingProduct: ProductDto | n
           <FormControl>
             <Input
               name="name"
-              defaultValue={editingProduct?.name ?? ""}
+              defaultValue={values.name}
               placeholder="np. Laptop123"
               required
             />
           </FormControl>
           <FormDescription>Wyłącznie litery i cyfry, unikalna nazwa.</FormDescription>
-          <FormMessage />
+          <FormMessage aria-live="polite" />
         </FormItem>
       </FormField>
 
@@ -78,15 +56,12 @@ export function ProductForm({ editingProduct }: { editingProduct: ProductDto | n
         <FormItem>
           <FormLabel>Kategoria</FormLabel>
           <FormControl>
-            <Select name="category" defaultValue={editingProduct?.category ?? "ELECTRONICS"}>
-              {(Object.keys(CATEGORY_LABELS) as Category[]).map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_LABELS[cat]}
-                </option>
-              ))}
+            <Select name="category" defaultValue={values.category}>
+              {categoryOptions}
             </Select>
           </FormControl>
-          <FormMessage />
+          <FormDescription>Wybierz kategorię określającą dopuszczalny zakres cen.</FormDescription>
+          <FormMessage aria-live="polite" />
         </FormItem>
       </FormField>
 
@@ -99,11 +74,12 @@ export function ProductForm({ editingProduct }: { editingProduct: ProductDto | n
                 name="price"
                 type="number"
                 step="0.01"
-                defaultValue={editingProduct ? String(editingProduct.price) : ""}
+                defaultValue={values.price}
                 required
               />
             </FormControl>
-            <FormMessage />
+            <FormDescription>Cena w PLN, maksymalnie dwa miejsca po przecinku.</FormDescription>
+            <FormMessage aria-live="polite" />
           </FormItem>
         </FormField>
 
@@ -114,24 +90,18 @@ export function ProductForm({ editingProduct }: { editingProduct: ProductDto | n
               <Input
                 name="quantity"
                 type="number"
-                defaultValue={editingProduct ? String(editingProduct.quantity) : "0"}
+                defaultValue={values.quantity}
                 required
               />
             </FormControl>
-            <FormMessage />
+            <FormDescription>Liczba całkowita od 0 do {MAX_DATABASE_INT}.</FormDescription>
+            <FormMessage aria-live="polite" />
           </FormItem>
         </FormField>
       </div>
 
       <div className="flex gap-2 pt-1">
-        <SubmitButton>{editingProduct ? "Zapisz zmiany" : "Utwórz"}</SubmitButton>
-        {editingProduct && (
-          <Link href="/">
-            <Button type="button" variant="outline">
-              Anuluj
-            </Button>
-          </Link>
-        )}
+        {children}
       </div>
     </Form>
   );

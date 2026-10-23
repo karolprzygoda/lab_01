@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { createForbiddenPhraseAction, type ActionState } from "@/app/actions";
-import { SubmitButton } from "@/components/products/submit-button";
+import { useActionState, type ReactNode } from "react";
+import { createForbiddenPhraseAction } from "@/app/actions";
+import type { ActionState, PhraseFormValues } from "@/lib/action-state";
 import {
   Form,
   FormControl,
@@ -10,37 +10,29 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
-const initialState: ActionState = { ok: false };
+const initialState: ActionState<PhraseFormValues> = { ok: false, revision: 0, values: { phrase: "" } };
 
-export function ForbiddenPhraseForm() {
-  const [formKey, setFormKey] = useState(0);
-
-  const [state, formAction] = useActionState(
-    async (prev: ActionState, formData: FormData) => {
-      const result = await createForbiddenPhraseAction(prev, formData);
-      if (result.ok) {
-        setFormKey((k) => k + 1);
-      }
-      return result;
-    },
-    initialState,
-  );
+export function ForbiddenPhraseForm({ children }: { children: ReactNode }) {
+  const [state, formAction] = useActionState(createForbiddenPhraseAction, initialState);
 
   return (
-    <Form key={formKey} action={formAction} errors={state.fieldErrors}>
+    <Form key={state.revision} action={formAction} errors={state.fieldErrors}>
+      {state.message ? <p role={state.ok ? "status" : "alert"} className="text-sm">{state.message}</p> : null}
       <FormField name="phrase">
         <FormItem>
           <FormLabel>Nowa zabroniona fraza</FormLabel>
           <div className="flex gap-2">
             <FormControl>
-              <Input name="phrase" placeholder="Dodaj zabronioną frazę..." required />
+              <Input name="phrase" defaultValue={state.values.phrase} placeholder="Dodaj zabronioną frazę..." required />
             </FormControl>
-            <SubmitButton>Dodaj</SubmitButton>
+            {children}
           </div>
-          <FormMessage />
+          <FormDescription>Od 1 do 50 znaków, bez rozróżniania wielkości liter.</FormDescription>
+          <FormMessage aria-live="polite" />
         </FormItem>
       </FormField>
     </Form>

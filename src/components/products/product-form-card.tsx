@@ -1,6 +1,11 @@
 import { ProductForm } from "@/components/products/product-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ProductDto } from "@/services/mappers";
+import { EMPTY_PRODUCT_VALUES } from "@/lib/action-state";
+import { ActionLink } from "@/components/products/action-link";
+import { SubmitButton } from "@/components/products/submit-button";
+import { CATEGORY_NAMES, PRICE_RANGES } from "@/lib/product-rules";
+import type { Category } from "@/generated/prisma/enums";
 
 export function ProductFormCard({ editingProduct }: { editingProduct: ProductDto | null }) {
   return (
@@ -14,7 +19,24 @@ export function ProductFormCard({ editingProduct }: { editingProduct: ProductDto
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ProductForm editingProduct={editingProduct} />
+        <ProductForm
+          key={editingProduct?.id ?? "new"}
+          productId={editingProduct?.id}
+          categoryOptions={Object.entries(CATEGORY_NAMES).map(([category, label]) => (
+            <option key={category} value={category}>
+              {label} ({PRICE_RANGES[category as Category].min}–{PRICE_RANGES[category as Category].max} PLN)
+            </option>
+          ))}
+          initialValues={editingProduct ? {
+            name: editingProduct.name,
+            category: editingProduct.category,
+            price: String(editingProduct.price),
+            quantity: String(editingProduct.quantity),
+          } : EMPTY_PRODUCT_VALUES}
+        >
+          <SubmitButton>{editingProduct ? "Zapisz zmiany" : "Utwórz"}</SubmitButton>
+          {editingProduct ? <ActionLink href="/">Anuluj</ActionLink> : null}
+        </ProductForm>
       </CardContent>
     </Card>
   );

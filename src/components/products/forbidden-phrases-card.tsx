@@ -1,5 +1,6 @@
 import { deleteForbiddenPhraseAction } from "@/app/actions";
 import { ForbiddenPhraseForm } from "@/components/products/forbidden-phrase-form";
+import { SubmitButton } from "@/components/products/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -18,7 +19,7 @@ export function ForbiddenPhrasesCard({ phrases }: { phrases: ForbiddenPhraseItem
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <ForbiddenPhraseForm />
+        <ForbiddenPhraseForm><SubmitButton>Dodaj</SubmitButton></ForbiddenPhraseForm>
 
         <div className="flex flex-wrap gap-2">
           {phrases.length === 0 ? (
@@ -28,13 +29,13 @@ export function ForbiddenPhrasesCard({ phrases }: { phrases: ForbiddenPhraseItem
               <Badge key={p.id} variant="secondary" className="gap-1.5">
                 {p.phrase}
                 <form action={deleteForbiddenPhraseAction.bind(null, p.id)} className="inline">
-                  <button
-                    type="submit"
-                    className="text-zinc-500 hover:text-red-600"
+                  <SubmitButton
+                    size="sm"
+                    variant="ghost"
                     aria-label={`Usuń ${p.phrase}`}
                   >
                     ×
-                  </button>
+                  </SubmitButton>
                 </form>
               </Badge>
             ))

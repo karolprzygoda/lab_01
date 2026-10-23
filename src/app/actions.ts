@@ -1,80 +1,94 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { AppError } from "@/lib/errors";
+import { redirect } from "next/navigation";
+import { EMPTY_PRODUCT_VALUES, type ActionState, type PhraseFormValues, type ProductFormValues } from "@/lib/action-state";
+import { AppError, NotFoundError } from "@/lib/errors";
+import { validateId } from "@/lib/validation/id.schema";
 import { forbiddenPhraseService } from "@/services/forbidden-phrase.service";
 import { productService } from "@/services/product.service";
 
-export type ActionState = {
-  ok: boolean;
-  message?: string;
-  fieldErrors?: Record<string, string>;
-};
+function readText(formData: FormData, name: string) {
+  const value = formData.get(name);
+  return typeof value === "string" ? value : "";
+}
 
-function toActionError(error: unknown): ActionState {
+function readNumber(value: string) {
+  return value.trim() === "" ? undefined : Number(value);
+}
+
+function toActionError<T>(error: unknown, values: T, revision: number): ActionState<T> {
   if (error instanceof AppError) {
     const fieldErrors: Record<string, string> = {};
     for (const detail of error.details ?? []) {
-      if (!fieldErrors[detail.field]) {
-        fieldErrors[detail.field] = detail.message;
-      }
+      fieldErrors[detail.field] ??= detail.message;
     }
-    return {
-      ok: false,
-      message: error.message,
-      fieldErrors,
-    };
+    return { ok: false, revision, message: error.message, fieldErrors, values };
   }
-  return { ok: false, message: "Wystąpił nieoczekiwany błąd serwera" };
+  console.error("Server Action failed", error);
+  return { ok: false, revision, message: "Wystąpił nieoczekiwany błąd serwera. Spróbuj ponownie.", values };
 }
 
 export async function saveProductAction(
-  _prevState: ActionState,
+  prevState: ActionState<ProductFormValues>,
   formData: FormData,
-): Promise<ActionState> {
+): Promise<ActionState<ProductFormValues>> {
+  const values: ProductFormValues = {
+    name: readText(formData, "name"),
+    category: readText(formData, "category"),
+    price: readText(formData, "price"),
+    quantity: readText(formData, "quantity"),
+  };
+  const revision = prevState.revision + 1;
+  const isEditing = formData.has("id");
   try {
-    const idRaw = formData.get("id");
-    const payload = {
-      name: String(formData.get("name") ?? ""),
-      category: String(formData.get("category") ?? ""),
-      price: Number(formData.get("price")),
-      quantity: Number(formData.get("quantity")),
-    };
-
-    if (idRaw) {
-      await productService.update(Number(idRaw), payload);
+    const payload = { ...values, price: readNumber(values.price), quantity: readNumber(values.quantity) };
+    if (isEditing) {
+      await productService.update(validateId(formData.get("id")), payload);
     } else {
       await productService.create(payload);
     }
-
-    revalidatePath("/");
-    return { ok: true };
   } catch (error) {
-    return toActionError(error);
+    return toActionError(error, values, revision);
   }
-}
 
-export async function deleteProductAction(id: number): Promise<void> {
-  await productService.delete(id);
+  // Navigation is outside the catch: redirect uses a framework control-flow exception.
   revalidatePath("/");
+  if (isEditing) redirect("/?notice=product-saved");
+  return { ok: true, revision, message: "Produkt został dodany.", values: EMPTY_PRODUCT_VALUES };
 }
 
 export async function createForbiddenPhraseAction(
-  _prevState: ActionState,
+  prevState: ActionState<PhraseFormValues>,
   formData: FormData,
-): Promise<ActionState> {
+): Promise<ActionState<PhraseFormValues>> {
+  const values = { phrase: readText(formData, "phrase") };
+  const revision = prevState.revision + 1;
   try {
-    await forbiddenPhraseService.create({
-      phrase: String(formData.get("phrase") ?? ""),
-    });
-    revalidatePath("/");
-    return { ok: true };
+    await forbiddenPhraseService.create(values);
   } catch (error) {
-    return toActionError(error);
+    return toActionError(error, values, revision);
   }
+  revalidatePath("/");
+  return { ok: true, revision, message: "Fraza została dodana.", values: { phrase: "" } };
 }
 
-export async function deleteForbiddenPhraseAction(id: number): Promise<void> {
-  await forbiddenPhraseService.delete(id);
+async function deleteResource(operation: () => Promise<void>, success: string): Promise<never> {
+  let notice = success;
+  try {
+    await operation();
+  } catch (error) {
+    notice = error instanceof NotFoundError ? "delete-not-found" : "delete-failed";
+    if (!(error instanceof AppError)) console.error("Delete action failed", error);
+  }
   revalidatePath("/");
+  redirect(`/?notice=${notice}`);
+}
+
+export async function deleteProductAction(id: number): Promise<never> {
+  return deleteResource(() => productService.delete(validateId(id)), "product-deleted");
+}
+
+export async function deleteForbiddenPhraseAction(id: number): Promise<never> {
+  return deleteResource(() => forbiddenPhraseService.delete(validateId(id)), "phrase-deleted");
 }
