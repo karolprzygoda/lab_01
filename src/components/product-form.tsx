@@ -7,6 +7,7 @@ import { MAX_DATABASE_INT } from "@/lib/product-rules";
 import { withActionToast } from "@/lib/action-toast";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/number-input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 
@@ -68,10 +69,10 @@ export function ProductForm({ productId, initialValues, categoryOptions, childre
         <FieldGroup className="grid sm:grid-cols-2">
           <Field data-invalid={Boolean(fieldErrors.price)}>
             <FieldLabel htmlFor={`${formId}-price`}>Cena (PLN)</FieldLabel>
-            <Input
+            <NumberInput
               id={`${formId}-price`}
               name="price"
-              type="number"
+              label="cenę"
               step={0.01}
               min={0}
               defaultValue={values.price}
@@ -84,10 +85,10 @@ export function ProductForm({ productId, initialValues, categoryOptions, childre
           </Field>
           <Field data-invalid={Boolean(fieldErrors.quantity)}>
             <FieldLabel htmlFor={`${formId}-quantity`}>Ilość</FieldLabel>
-            <Input
+            <NumberInput
               id={`${formId}-quantity`}
               name="quantity"
-              type="number"
+              label="ilość"
               step={1}
               min={0}
               max={MAX_DATABASE_INT}
