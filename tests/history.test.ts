@@ -90,4 +90,36 @@ describe("Product Change History & Atomicity", () => {
     const products = await productRepository.findAll();
     expect(products).toHaveLength(0);
   });
+
+  it.each(["update", "delete"] as const)("rolls back %s when history write fails", async (operation) => {
+    const created = await createProduct();
+    const before = await api(`/products/${created.id}`);
+    const beforeHistory = await api(`/products/${created.id}/history`);
+    class FailingHistoryRepository extends HistoryRepository {
+      override create(): never { throw new Error("History unavailable"); }
+    }
+    const service = new ProductService(productRepository, new FailingHistoryRepository());
+    await expect(operation === "update"
+      ? service.update(created.id, { ...validProduct, quantity: 99 })
+      : service.delete(created.id)).rejects.toThrow("History unavailable");
+    expect((await api(`/products/${created.id}`)).body).toEqual(before.body);
+    expect((await api(`/products/${created.id}/history`)).body).toEqual(beforeHistory.body);
+  });
+
+  it("keeps a continuous history when updating and deleting concurrently", async () => {
+    const created = await createProduct();
+    const [update, removal] = await Promise.all([
+      api(`/products/${created.id}`, { method: "PUT", body: { ...validProduct, quantity: 99 } }),
+      api(`/products/${created.id}`, { method: "DELETE" }),
+    ]);
+    expect([200, 404]).toContain(update.status);
+    expect(removal.status).toBe(204);
+    const history = await api<{ data: HistoryEntry[] }>(`/products/${created.id}/history`);
+    expect(history.body.data).toHaveLength(update.status === 200 ? 3 : 2);
+    for (let index = 1; index < history.body.data.length; index++) {
+      expect(history.body.data[index].oldValue).toEqual(history.body.data[index - 1].newValue);
+    }
+    expect(history.body.data.at(-1)?.action).toBe("DELETE");
+    expect((await api(`/products/${created.id}`)).status).toBe(404);
+  });
 });
