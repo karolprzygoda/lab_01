@@ -47,7 +47,7 @@ Punktacja opisuje pozycje ze specyfikacji; ostateczną ocenę ustala prowadzący
 | `@prisma/adapter-pg`, `pg` | Połączenie Prisma Client z bazą przez protokół PostgreSQL. |
 | Zod 4 | Walidacja rzeczywistych danych wejściowych w trakcie działania programu. |
 | T3 Env, `server-only` | Walidacja konfiguracji i ochrona modułów backendu przed importem do klienta. |
-| Tailwind CSS 4, lokalne komponenty UI | Wygląd panelu. Komponenty `src/components/ui` mają interfejs inspirowany shadcn/ui. |
+| Tailwind CSS 4, shadcn/ui na Base UI | Formularze używają gotowych `Input`, `Select`, `Button` i `Separator`; stany ładowania składają się z `Skeleton`. Komponenty są w `src/components/ui`. |
 | Vitest 5 | Testy integracyjne wymagań domenowych. |
 
 Wersje i skrypty znajdują się w [package.json](package.json), a konkretne wersje zależności w [pnpm-lock.yaml](pnpm-lock.yaml).
@@ -129,7 +129,7 @@ src/
 │   │   ├── products/[id]/history/route.ts    GET historii
 │   │   ├── forbidden-phrases/route.ts        GET i POST fraz
 │   │   └── forbidden-phrases/[id]/route.ts   DELETE frazy
-│   ├── page.tsx                             nagłówek i granica Suspense
+│   ├── page.tsx                             nagłówek i osadzenie panelu
 │   ├── layout.tsx                           dokument HTML i metadane
 │   ├── error.tsx                            ekran awarii i ponowienie
 │   ├── favicon.ico                          automatycznie wykrywana ikona strony
@@ -139,7 +139,7 @@ src/
 ├── server/                                  moduły oznaczone server-only
 │   ├── db.ts                                współdzielony klient Prisma
 │   ├── actions.ts                           Server Actions formularzy
-│   ├── products-view.ts                     przygotowanie danych widoku panelu
+│   ├── products-view.ts                     parametry URL, wybór edycji i historii
 │   ├── api/http.ts                          odpowiedzi HTTP i odczyt wejścia
 │   ├── services/                            reguły biznesowe i transakcje
 │   │   ├── product.service.ts
@@ -153,13 +153,15 @@ src/
 │   ├── database-errors.ts                   rozpoznawanie błędów Prisma
 │   └── mappers.ts                           konwersja rekordów bazy na DTO
 ├── components/
-│   ├── ui/                                  wspólne komponenty UI (bez zmian)
+│   ├── ui/                                  komponenty UI, w tym shadcn na Base UI
 │   ├── action-link.tsx                      link stylizowany jako przycisk
 │   ├── forbidden-phrase-form.tsx            formularz dodawania fraz
 │   ├── forbidden-phrases-card.tsx           lista i zarządzanie frazami
 │   ├── product-form-card.tsx                serwerowa otoczka formularza
 │   ├── product-form.tsx                     stan formularza produktu
 │   ├── product-history-card.tsx             tabela historii
+│   ├── product-notice.tsx                   komunikat po przekierowaniu akcji
+│   ├── product-skeletons.tsx                szkielety sekcji z shadcn Skeleton
 │   ├── products-content.tsx                 serwerowe składanie panelu
 │   ├── products-table-card.tsx              tabela produktów
 │   └── submit-button.tsx                    stan wysyłania formularza
@@ -176,6 +178,7 @@ prisma/
 prisma.config.ts                             konfiguracja CLI i bazy shadow
 tests/                                       testy wymagań oraz ich infrastruktura
 vitest.config.mts                            konfiguracja testów
+components.json                              konfiguracja shadcn i aliasu ui
 ```
 
 Podział backendu opiera się na [Folder Structure (App) z Create T3 App](https://create.t3.gg/en/folder-structure-app?packages=nextauth%2Cprisma%2Ctailwind): `server` zawiera logikę backendu, a `server/db.ts` klienta Prisma. `app` przechowuje routing i ekrany, a `styles/globals.css` style globalne. Wszystkie komponenty panelu znajdują się bezpośrednio w `src/components`; jedyny podkatalog to `ui`. `prisma` pozostaje w katalogu głównym. Serwisy i repozytoria zachowują architekturę N-Layer wymaganą w zadaniu.
@@ -184,7 +187,7 @@ Każdy ręcznie pisany moduł w `src/server` importuje `server-only`. Next.js zg
 
 `src/lib` zawiera dane i typy współdzielone, bez dostępu do bazy. Typy DTO są w `product-types.ts`, a funkcje mapujące rekordy Prisma w `server/mappers.ts`. Kod wygenerowany przez Prisma pozostaje poza `server`, ponieważ udostępnia również typy i enumy bezpieczne dla klienta. Dostęp do bazy przechodzi przez chroniony moduł `server/db.ts`.
 
-`src/env.ts` używa `@t3-oss/env-nextjs` i Zod do walidacji adresów baz oraz `NODE_ENV`. Klient bazy i konfiguracja CLI Prisma korzystają z tego samego modułu środowiska. Komponenty UI w `src/components/ui` pozostają współdzielone i nie były zmieniane.
+`src/env.ts` używa `@t3-oss/env-nextjs` i Zod do walidacji adresów baz oraz `NODE_ENV`. Klient bazy i konfiguracja CLI Prisma korzystają z tego samego modułu środowiska. `components.json` wskazuje wariant `base-nova` shadcn i katalog `src/components/ui`; komponenty aplikacji korzystają z nich bez dodatkowych własnych wersji inputów i selectów.
 
 Alias `@/` oznacza katalog `src/`, a `@generated/` katalog `prisma/generated/`. Wygenerowany klient jest ignorowany przez Git; po pobraniu projektu odtwarza go `pnpm db:generate`. Plików klienta nie edytuje się ręcznie. Lokalizację określa `output = "./generated"` w `prisma/schema.prisma`, względem pliku schematu. Importy klienta bazy wskazują `@generated/client`, a typów i enumów `@generated/enums`.
 
@@ -395,28 +398,33 @@ pnpm test tests/validation.test.ts
 
 | Plik | Rola w demonstracji |
 | --- | --- |
-| [page.tsx](src/app/page.tsx) | Definiuje nagłówek strony i granicę `Suspense` z komunikatem ładowania. |
+| [page.tsx](src/app/page.tsx) | Definiuje nagłówek strony i osadza panel. |
 | [layout.tsx](src/app/layout.tsx) | Wspólny dokument HTML, język polski, fonty, metadane i import stylów globalnych. |
-| [products-content.tsx](src/components/products-content.tsx) | Serwerowy komponent składający karty panelu i wyświetlający komunikaty. |
-| [products-view.ts](src/server/products-view.ts) | Waliduje parametry URL, pobiera równolegle dane przez serwisy i przygotowuje stan edycji oraz historii. |
+| [products-content.tsx](src/components/products-content.tsx) | Składa niezależne sekcje panelu z osobnymi granicami `Suspense`. |
+| [products-view.ts](src/server/products-view.ts) | Waliduje parametry URL i udostępnia osobne odczyty produktu do edycji oraz historii. |
+| [product-skeletons.tsx](src/components/product-skeletons.tsx) | Układa gotowe komponenty `Skeleton` w zastępczy formularz, kartę fraz i tabelę produktów. |
 | [actions.ts](src/server/actions.ts) | Odczytuje `FormData`, wywołuje serwisy, zwraca komunikaty i odświeża widok. |
-| [product-form-card.tsx](src/components/product-form-card.tsx) | Na serwerze przygotowuje formularz edycji/dodania, opcje kategorii i przyciski. |
+| [product-form-card.tsx](src/components/product-form-card.tsx) | Pobiera wybrany produkt do edycji; na serwerze przygotowuje wartości formularza, etykiety kategorii i przyciski. |
 | [product-form.tsx](src/components/product-form.tsx) | Obsługuje stan błędów i zachowuje wartości pól przez `useActionState`. |
-| [products-table-card.tsx](src/components/products-table-card.tsx) | Wyświetla produkty i akcje edycji, historii oraz usuwania. |
-| [forbidden-phrases-card.tsx](src/components/forbidden-phrases-card.tsx) | Lista fraz, formularz dodania i usuwanie. |
-| [product-history-card.tsx](src/components/product-history-card.tsx) | Tabela poprzednich i nowych stanów. |
+| [products-table-card.tsx](src/components/products-table-card.tsx) | Samodzielnie pobiera listę produktów i wyświetla akcje edycji, historii oraz usuwania. |
+| [forbidden-phrases-card.tsx](src/components/forbidden-phrases-card.tsx) | Samodzielnie pobiera frazy; wyświetla listę, formularz dodania i usuwanie. |
+| [product-history-card.tsx](src/components/product-history-card.tsx) | Pobiera wskazaną historię i wyświetla poprzednie oraz nowe stany; bez parametru `history` niczego nie pobiera. |
 | [error.tsx](src/app/error.tsx) | Obsługa nieoczekiwanej awarii odczytu i ponowienie przez `retry()`. |
 | [not-found.tsx](src/app/not-found.tsx) | Serwerowa strona 404 z linkiem powrotu do panelu. |
 | [globals.css](src/styles/globals.css) | Style globalne importowane przez główny layout. |
 | [favicon.ico](src/app/favicon.ico) | Ikona dostępna pod `/favicon.ico`; Next.js automatycznie dodaje jej metadane na podstawie pliku w `app`. |
 
-Strona, karty, tabela, historia i linki są komponentami serwerowymi. Formularze wymagają klienta do wyświetlania stanu akcji; `SubmitButton` korzysta z `useFormStatus`. Interaktywny jest również ekran ponawiania po błędzie.
+Strona, karty, tabela, historia, szkielety i linki są komponentami serwerowymi. Formularze wymagają klienta do wyświetlania stanu akcji; `SubmitButton` korzysta z `useFormStatus`. Kontrolki Base UI obsługują interakcje w przeglądarce, a ekran błędu pozwala ponowić odczyt.
 
-Przepływ odczytu panelu: `page.tsx` → `ProductsContent` → `getProductsView` → serwisy → repozytoria → Prisma. Dzięki temu strona opisuje układ, komponent opisuje zawartość panelu, a moduł `server/products-view.ts` przygotowuje dane. Małe funkcje pomocnicze do odczytu parametrów pozostają prywatne w tym module.
+Przepływ odczytu panelu: `page.tsx` → `ProductsContent` → wybrana karta → serwis → repozytorium → Prisma. Karty zaczynają odczyty niezależnie; nie ma wspólnego `Promise.all`, który zatrzymywałby cały panel. Tabela produktów ma własny `Suspense` z `ProductsTableSkeleton`. Frazy i formularz mają osobne szkielety, a opcjonalna historia i komunikat używają `fallback={null}`. Formularz dodawania nie pobiera produktu i nie czeka na listę produktów; formularz edycji odczytuje tylko wskazane ID.
+
+`getProductSelection` w `server/products-view.ts` interpretuje URL, a React `cache` współdzieli wynik tego odczytu w ramach jednego renderowania żądania. `getEditingProduct` i `getSelectedHistory` obsługują osobne zapytania oraz oczekiwane błędy. Nie tworzy to trwałego cache danych magazynowych.
+
+Formularz używa bezpośrednio `Input` i części `Select` z `src/components/ui`. Cena i ilość to standardowe `Input type="number"`; nazwa i fraza używają tekstowego `Input`. `Select` otrzymuje `name="category"`, więc wybrana kategoria trafia do `FormData`. `FormControl` przypisuje etykietę, opisy i stan błędu do `SelectTrigger`. Przejścia listy i pulsowanie szkieletów pochodzą z komponentów shadcn oraz `tw-animate-css`; projekt nie dodaje własnych animacji CSS.
 
 ### Typy propsów tras
 
-`LayoutProps<"/">` w głównym layoucie oznacza propsy layoutu przypisanego do `/`, w tym `children`. `PageProps<"/">` w stronie określa propsy strony, m.in. asynchroniczne `searchParams`. Zapis `PageProps<"/">["searchParams"]` wybiera z tego typu sam typ parametrów zapytania; używają go `ProductsContent` i `getProductsView`.
+`LayoutProps<"/">` w głównym layoucie oznacza propsy layoutu przypisanego do `/`, w tym `children`. `PageProps<"/">` w stronie określa propsy strony, m.in. asynchroniczne `searchParams`. Zapis `PageProps<"/">["searchParams"]` wybiera z tego typu sam typ parametrów zapytania; używają go `ProductsContent`, karty zależne od URL i funkcje w `products-view.ts`.
 
 Są to globalne typy generowane przez Next.js podczas `pnpm dev`, `pnpm build` lub `pnpm typecheck` — ostatni skrypt uruchamia `next typegen` przed TypeScriptem. Nie wymagają importu. Typowanie pomaga podczas pisania kodu; wartości dostarczone w URL nadal przechodzą walidację `validateId` na serwerze. Definicje wygenerowane przez Next.js znajdują się w `.next/types`, osobno od klienta Prisma w `prisma/generated`.
 
@@ -431,9 +439,9 @@ Parametry panelu:
 - `/?edit=ID` — wybór produktu do edycji;
 - `/?history=ID` — wyświetlenie historii, również po usunięciu produktu.
 
-`getProductsView` sprawdza również pojedyncze wystąpienie ID: np. `?edit=1&edit=2` daje komunikat o niepoprawnym identyfikatorze. Parametr `notice` wybiera komunikat ze stałej `NOTICES`; nieznane wartości są pomijane. Oczekiwany brak produktu jest komunikatem w panelu, a nieoczekiwana awaria odczytu trafia do `error.tsx`.
+`getProductSelection` sprawdza również pojedyncze wystąpienie ID: np. `?edit=1&edit=2` daje komunikat o niepoprawnym identyfikatorze. Parametr `notice` wybiera komunikat ze stałej `NOTICES`; nieznane wartości są pomijane. Oczekiwany brak produktu jest komunikatem w panelu, a nieoczekiwana awaria odczytu trafia do `error.tsx`.
 
-W [next.config.ts](next.config.ts) włączono `cacheComponents` i `partialPrefetching`. `Suspense` rozdziela otoczkę strony od dynamicznego odczytu. Kolekcje API używają `connection()`. W kodzie nie ma `use cache` buforującego listę magazynową między żądaniami.
+W [next.config.ts](next.config.ts) włączono `cacheComponents` i `partialPrefetching`. Osobne granice `Suspense` pozwalają strumieniować sekcje bez blokowania całego panelu. Kolekcje API używają `connection()`. W kodzie nie ma `use cache` buforującego listę magazynową między żądaniami.
 
 ## 11. Baza danych i migracje
 
