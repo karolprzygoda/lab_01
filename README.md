@@ -133,9 +133,8 @@ src/
 │   ├── layout.tsx                           dokument HTML i metadane
 │   ├── error.tsx                            ekran awarii i ponowienie
 │   ├── favicon.ico                          automatycznie wykrywana ikona strony
-│   └── not-found.tsx                         prosta strona 404
-├── styles/
-│   └── globals.css                          style globalne
+│   ├── not-found.tsx                         prosta strona 404
+│   └── globals.css                          domyślny motyw shadcn
 ├── server/                                  moduły oznaczone server-only
 │   ├── db.ts                                współdzielony klient Prisma
 │   ├── actions.ts                           Server Actions formularzy
@@ -156,12 +155,13 @@ src/
 │   ├── ui/                                  komponenty UI, w tym shadcn na Base UI
 │   ├── action-link.tsx                      link stylizowany jako przycisk
 │   ├── forbidden-phrase-form.tsx            formularz dodawania fraz
-│   ├── forbidden-phrases-card.tsx           lista i zarządzanie frazami
+│   ├── forbidden-phrases-card.tsx           stała karta i formularz fraz
+│   ├── forbidden-phrases-list.tsx           serwerowy odczyt listy fraz
 │   ├── product-form-card.tsx                serwerowa otoczka formularza
 │   ├── product-form.tsx                     stan formularza produktu
 │   ├── product-history-card.tsx             tabela historii
-│   ├── product-notice.tsx                   komunikat po przekierowaniu akcji
-│   ├── product-skeletons.tsx                szkielety sekcji z shadcn Skeleton
+│   ├── product-skeletons.tsx                szkielety fraz i wierszy
+│   ├── product-rows.tsx                     serwerowy odczyt produktów
 │   ├── products-content.tsx                 serwerowe składanie panelu
 │   ├── products-table-card.tsx              tabela produktów
 │   └── submit-button.tsx                    stan wysyłania formularza
@@ -181,7 +181,7 @@ vitest.config.mts                            konfiguracja testów
 components.json                              konfiguracja shadcn i aliasu ui
 ```
 
-Podział backendu opiera się na [Folder Structure (App) z Create T3 App](https://create.t3.gg/en/folder-structure-app?packages=nextauth%2Cprisma%2Ctailwind): `server` zawiera logikę backendu, a `server/db.ts` klienta Prisma. `app` przechowuje routing i ekrany, a `styles/globals.css` style globalne. Wszystkie komponenty panelu znajdują się bezpośrednio w `src/components`; jedyny podkatalog to `ui`. `prisma` pozostaje w katalogu głównym. Serwisy i repozytoria zachowują architekturę N-Layer wymaganą w zadaniu.
+Podział backendu opiera się na [Folder Structure (App) z Create T3 App](https://create.t3.gg/en/folder-structure-app?packages=nextauth%2Cprisma%2Ctailwind): `server` zawiera logikę backendu, a `server/db.ts` klienta Prisma. `app` przechowuje routing i ekrany, a `app/globals.css` domyślny motyw shadcn. Wszystkie komponenty panelu znajdują się bezpośrednio w `src/components`; jedyny podkatalog to `ui`. `prisma` pozostaje w katalogu głównym. Serwisy i repozytoria zachowują architekturę N-Layer wymaganą w zadaniu.
 
 Każdy ręcznie pisany moduł w `src/server` importuje `server-only`. Next.js zgłosi błąd budowania przy próbie zwykłego importu takiego modułu do komponentu klienckiego. Plik `server/actions.ts` dodatkowo ma `"use server"`, więc formularz może importować jego funkcje jako zdalne Server Actions. Są to dwa różne mechanizmy: znacznik `server-only` chroni granicę modułów, a `"use server"` definiuje akcje.
 
@@ -398,33 +398,37 @@ pnpm test tests/validation.test.ts
 
 | Plik | Rola w demonstracji |
 | --- | --- |
-| [page.tsx](src/app/page.tsx) | Definiuje nagłówek strony i osadza panel. |
+| [page.tsx](src/app/page.tsx) | Rozwiązuje parametry URL i opcjonalną edycję/historię przed wyrenderowaniem panelu. |
 | [layout.tsx](src/app/layout.tsx) | Wspólny dokument HTML, język polski, fonty, metadane i import stylów globalnych. |
-| [products-content.tsx](src/components/products-content.tsx) | Składa niezależne sekcje panelu z osobnymi granicami `Suspense`. |
+| [products-content.tsx](src/components/products-content.tsx) | Składa gotowy formularz, komunikaty, karty i opcjonalną historię. |
 | [products-view.ts](src/server/products-view.ts) | Waliduje parametry URL i udostępnia osobne odczyty produktu do edycji oraz historii. |
-| [product-skeletons.tsx](src/components/product-skeletons.tsx) | Układa gotowe komponenty `Skeleton` w zastępczy formularz, kartę fraz i tabelę produktów. |
+| [product-skeletons.tsx](src/components/product-skeletons.tsx) | Układa gotowe `Skeleton` w zastępcze frazy i wiersze produktów. |
 | [actions.ts](src/server/actions.ts) | Odczytuje `FormData`, wywołuje serwisy, zwraca komunikaty i odświeża widok. |
-| [product-form-card.tsx](src/components/product-form-card.tsx) | Pobiera wybrany produkt do edycji; na serwerze przygotowuje wartości formularza, etykiety kategorii i przyciski. |
+| [product-form-card.tsx](src/components/product-form-card.tsx) | Otrzymuje gotowy produkt do edycji; przygotowuje wartości formularza, etykiety kategorii i przyciski. |
 | [product-form.tsx](src/components/product-form.tsx) | Obsługuje stan błędów i zachowuje wartości pól przez `useActionState`. |
-| [products-table-card.tsx](src/components/products-table-card.tsx) | Samodzielnie pobiera listę produktów i wyświetla akcje edycji, historii oraz usuwania. |
-| [forbidden-phrases-card.tsx](src/components/forbidden-phrases-card.tsx) | Samodzielnie pobiera frazy; wyświetla listę, formularz dodania i usuwanie. |
-| [product-history-card.tsx](src/components/product-history-card.tsx) | Pobiera wskazaną historię i wyświetla poprzednie oraz nowe stany; bez parametru `history` niczego nie pobiera. |
+| [products-table-card.tsx](src/components/products-table-card.tsx) | Stała karta, nagłówek i kolumny tabeli; `Suspense` jest wewnątrz `TableBody`. |
+| [product-rows.tsx](src/components/product-rows.tsx) | Pobiera listę produktów i zwraca wyłącznie wiersze z akcjami. |
+| [forbidden-phrases-card.tsx](src/components/forbidden-phrases-card.tsx) | Stała karta i formularz; `Suspense` obejmuje tylko listę fraz. |
+| [forbidden-phrases-list.tsx](src/components/forbidden-phrases-list.tsx) | Pobiera i wyświetla frazy z przyciskami usuwania. |
+| [product-history-card.tsx](src/components/product-history-card.tsx) | Wyświetla historię odczytaną wcześniej przez stronę. |
 | [error.tsx](src/app/error.tsx) | Obsługa nieoczekiwanej awarii odczytu i ponowienie przez `retry()`. |
 | [not-found.tsx](src/app/not-found.tsx) | Serwerowa strona 404 z linkiem powrotu do panelu. |
-| [globals.css](src/styles/globals.css) | Style globalne importowane przez główny layout. |
+| [globals.css](src/app/globals.css) | Style globalne importowane przez główny layout. |
 | [favicon.ico](src/app/favicon.ico) | Ikona dostępna pod `/favicon.ico`; Next.js automatycznie dodaje jej metadane na podstawie pliku w `app`. |
 
 Strona, karty, tabela, historia, szkielety i linki są komponentami serwerowymi. Formularze wymagają klienta do wyświetlania stanu akcji; `SubmitButton` korzysta z `useFormStatus`. Kontrolki Base UI obsługują interakcje w przeglądarce, a ekran błędu pozwala ponowić odczyt.
 
-Przepływ odczytu panelu: `page.tsx` → `ProductsContent` → wybrana karta → serwis → repozytorium → Prisma. Karty zaczynają odczyty niezależnie; nie ma wspólnego `Promise.all`, który zatrzymywałby cały panel. Tabela produktów ma własny `Suspense` z `ProductsTableSkeleton`. Frazy i formularz mają osobne szkielety, a opcjonalna historia i komunikat używają `fallback={null}`. Formularz dodawania nie pobiera produktu i nie czeka na listę produktów; formularz edycji odczytuje tylko wskazane ID.
+Strona odczytuje parametry URL i przygotowuje opcjonalną edycję oraz historię przez funkcje z `products-view.ts`. Na zwykłym `/` nie powoduje to zapytań o produkt ani historię. Formularze, karty i nagłówek tabeli są renderowane od razu w docelowym układzie.
+
+W całym panelu są tylko dwie granice `Suspense`: `ForbiddenPhrasesList` wewnątrz karty fraz i `ProductRows` wewnątrz `TableBody`. Każdy z tych komponentów sam pobiera dane przez serwis i repozytorium. Szkielety zastępują tylko zawartość listy i wiersze. Lista fraz ma stały obszar wysokości `h-32`, a tabela `h-80`, z przewijaniem i zarezerwowanym miejscem na pasek przewijania. Kolumny mają ustalone szerokości. Wymiary te dotyczą układu zewnętrznego; komponenty shadcn zachowują domyślne style.
 
 `getProductSelection` w `server/products-view.ts` interpretuje URL, a React `cache` współdzieli wynik tego odczytu w ramach jednego renderowania żądania. `getEditingProduct` i `getSelectedHistory` obsługują osobne zapytania oraz oczekiwane błędy. Nie tworzy to trwałego cache danych magazynowych.
 
-Formularz używa bezpośrednio `Input` i części `Select` z `src/components/ui`. Cena i ilość to standardowe `Input type="number"`; nazwa i fraza używają tekstowego `Input`. `Select` otrzymuje `name="category"`, więc wybrana kategoria trafia do `FormData`. `FormControl` przypisuje etykietę, opisy i stan błędu do `SelectTrigger`. Przejścia listy i pulsowanie szkieletów pochodzą z komponentów shadcn oraz `tw-animate-css`; projekt nie dodaje własnych animacji CSS.
+Formularz używa bezpośrednio `Input` i części `Select` z `src/components/ui`. Cena i ilość to standardowe `Input type="number"`; nazwa i fraza używają tekstowego `Input`. `Select` otrzymuje `name="category"`, więc wybrana kategoria trafia do `FormData`. Domyślne `Field`, `FieldLabel`, `FieldDescription` i `FieldError` zastępują wcześniejsze własne komponenty formularza; powiązania `id`, `htmlFor`, `aria-describedby` oraz `aria-invalid` są przekazywane bezpośrednio do kontrolek. Przejścia listy i pulsowanie szkieletów pochodzą z komponentów shadcn oraz `tw-animate-css`; projekt nie dodaje własnych animacji CSS.
 
 ### Typy propsów tras
 
-`LayoutProps<"/">` w głównym layoucie oznacza propsy layoutu przypisanego do `/`, w tym `children`. `PageProps<"/">` w stronie określa propsy strony, m.in. asynchroniczne `searchParams`. Zapis `PageProps<"/">["searchParams"]` wybiera z tego typu sam typ parametrów zapytania; używają go `ProductsContent`, karty zależne od URL i funkcje w `products-view.ts`.
+`LayoutProps<"/">` w głównym layoucie oznacza propsy layoutu przypisanego do `/`, w tym `children`. `PageProps<"/">` w stronie określa propsy strony, m.in. asynchroniczne `searchParams`. Zapis `PageProps<"/">["searchParams"]` wybiera z tego typu sam typ parametrów zapytania; używają go strona i funkcje w `products-view.ts`. Karty otrzymują gotowe dane.
 
 Są to globalne typy generowane przez Next.js podczas `pnpm dev`, `pnpm build` lub `pnpm typecheck` — ostatni skrypt uruchamia `next typegen` przed TypeScriptem. Nie wymagają importu. Typowanie pomaga podczas pisania kodu; wartości dostarczone w URL nadal przechodzą walidację `validateId` na serwerze. Definicje wygenerowane przez Next.js znajdują się w `.next/types`, osobno od klienta Prisma w `prisma/generated`.
 
@@ -441,7 +445,9 @@ Parametry panelu:
 
 `getProductSelection` sprawdza również pojedyncze wystąpienie ID: np. `?edit=1&edit=2` daje komunikat o niepoprawnym identyfikatorze. Parametr `notice` wybiera komunikat ze stałej `NOTICES`; nieznane wartości są pomijane. Oczekiwany brak produktu jest komunikatem w panelu, a nieoczekiwana awaria odczytu trafia do `error.tsx`.
 
-W [next.config.ts](next.config.ts) włączono `cacheComponents` i `partialPrefetching`. Osobne granice `Suspense` pozwalają strumieniować sekcje bez blokowania całego panelu. Kolekcje API używają `connection()`. W kodzie nie ma `use cache` buforującego listę magazynową między żądaniami.
+Panel korzysta ze standardowego dynamicznego renderowania App Router, bez flag `cacheComponents` i `partialPrefetching`. Pozwala to rozwiązać parametry żądania przed renderowaniem formularza i pozostawić `Suspense` wyłącznie przy dwóch listach. Dane magazynowe nie są buforowane między żądaniami.
+
+`src/app/globals.css` zawiera domyślny neutralny motyw z dokumentacji shadcn, importy `shadcn/tailwind.css` i `tw-animate-css` oraz przypisanie fontów Geist. `ThemeProvider` z `next-themes` w głównym layoucie ustawia standardową klasę `dark` zgodnie z motywem systemu. Nie ma własnych kolorów komponentów ani własnych animacji.
 
 ## 11. Baza danych i migracje
 
