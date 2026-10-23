@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Category } from "@/generated/prisma/enums";
+import { Category } from "@generated/enums";
 import { ValidationError } from "@/lib/errors";
 import { CATEGORY_NAMES, MAX_DATABASE_INT, PRICE_RANGES } from "@/lib/product-rules";
 

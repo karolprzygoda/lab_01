@@ -1,4 +1,4 @@
-import type { Category } from "@/generated/prisma/enums";
+import type { Category } from "@generated/enums";
 import { prisma, type DbClient } from "@/lib/prisma";
 
 export type ProductData = {

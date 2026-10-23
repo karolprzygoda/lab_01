@@ -1,5 +1,5 @@
-import type { Product } from "@/generated/prisma/client";
-import { HistoryAction } from "@/generated/prisma/enums";
+import type { Product } from "@generated/client";
+import { HistoryAction } from "@generated/enums";
 import { isDatabaseError } from "@/lib/database-errors";
 import { validateId } from "@/lib/validation/id.schema";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";

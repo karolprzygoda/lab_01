@@ -5,7 +5,7 @@ import { EMPTY_PRODUCT_VALUES } from "@/lib/action-state";
 import { ActionLink } from "@/components/products/action-link";
 import { SubmitButton } from "@/components/products/submit-button";
 import { CATEGORY_NAMES, PRICE_RANGES } from "@/lib/product-rules";
-import type { Category } from "@/generated/prisma/enums";
+import type { Category } from "@generated/enums";
 
 export function ProductFormCard({ editingProduct }: { editingProduct: ProductDto | null }) {
   return (

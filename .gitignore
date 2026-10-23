@@ -15,6 +15,7 @@
 
 # local presentation notes and audits
 /docs/
+/prisma/generated/
 
 # next.js
 /.next/

@@ -1,5 +1,5 @@
-import type { Product, ProductHistory } from "@/generated/prisma/client";
-import type { Category, HistoryAction } from "@/generated/prisma/enums";
+import type { Product, ProductHistory } from "@generated/client";
+import type { Category, HistoryAction } from "@generated/enums";
 
 export type ProductDto = {
   id: number;

@@ -1,4 +1,4 @@
-import type { Category } from "@/generated/prisma/enums";
+import type { Category } from "@generated/enums";
 
 export const MAX_DATABASE_INT = 2_147_483_647;
 

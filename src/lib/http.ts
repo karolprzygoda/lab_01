@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@generated/client";
 import { AppError, ValidationError } from "@/lib/errors";
 import { validateId } from "@/lib/validation/id.schema";
 

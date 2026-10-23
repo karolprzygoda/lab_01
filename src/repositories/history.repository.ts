@@ -1,5 +1,5 @@
-import type { Prisma } from "@/generated/prisma/client";
-import type { HistoryAction } from "@/generated/prisma/enums";
+import type { Prisma } from "@generated/client";
+import type { HistoryAction } from "@generated/enums";
 import { prisma, type DbClient } from "@/lib/prisma";
 
 export type HistoryEntryData = {
