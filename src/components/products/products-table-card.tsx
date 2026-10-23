@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { deleteProductAction } from "@/app/actions";
 import { SubmitButton } from "@/components/products/submit-button";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { ActionLink } from "@/components/products/action-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -43,16 +42,12 @@ export function ProductsTableCard({ products }: { products: ProductDto[] }) {
                 <TableCell>{product.price.toFixed(2)} PLN</TableCell>
                 <TableCell>{product.quantity}</TableCell>
                 <TableCell className="flex justify-end gap-2">
-                  <Link href={`/?edit=${product.id}`}>
-                    <Button size="sm" variant="outline" type="button">
-                      Edytuj
-                    </Button>
-                  </Link>
-                  <Link href={`/?history=${product.id}`}>
-                    <Button size="sm" variant="secondary" type="button">
-                      Historia
-                    </Button>
-                  </Link>
+                  <ActionLink href={`/?edit=${product.id}`}>
+                    Edytuj
+                  </ActionLink>
+                  <ActionLink href={`/?history=${product.id}`}>
+                    Historia
+                  </ActionLink>
                   <form action={deleteProductAction.bind(null, product.id)}>
                     <SubmitButton size="sm" variant="destructive">
                       Usuń
