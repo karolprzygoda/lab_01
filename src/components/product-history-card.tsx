@@ -9,22 +9,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getSelectedHistory } from "@/server/products-view";
+import type { HistoryEntryDto } from "@/lib/product-types";
 
 interface ProductHistoryCardProps {
-  searchParams: PageProps<"/">["searchParams"];
+  productId: number;
+  entries: HistoryEntryDto[];
 }
 
-export async function ProductHistoryCard({ searchParams }: ProductHistoryCardProps) {
-  const { history, error } = await getSelectedHistory(searchParams);
-  if (error) return <p role="alert">{error}</p>;
-  if (!history) return null;
-
-  const { productId, entries } = history;
-
+export function ProductHistoryCard({ productId, entries }: ProductHistoryCardProps) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <CardTitle>Historia zmian produktu #{productId}</CardTitle>
         <ActionLink href="/">
           Zamknij
@@ -46,13 +41,13 @@ export async function ProductHistoryCard({ searchParams }: ProductHistoryCardPro
                 <TableCell>
                   <Badge>{entry.action}</Badge>
                 </TableCell>
-                <TableCell className="font-mono text-xs">
+                <TableCell>
                   {entry.oldValue ? JSON.stringify(entry.oldValue) : "—"}
                 </TableCell>
-                <TableCell className="font-mono text-xs">
+                <TableCell>
                   {entry.newValue ? JSON.stringify(entry.newValue) : "—"}
                 </TableCell>
-                <TableCell className="text-xs text-zinc-500">
+                <TableCell>
                   {new Date(entry.createdAt).toLocaleString("pl-PL", { timeZone: "Europe/Warsaw" })}
                 </TableCell>
               </TableRow>

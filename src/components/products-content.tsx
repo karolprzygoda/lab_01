@@ -1,39 +1,30 @@
-import { Suspense } from "react";
 import { ForbiddenPhrasesCard } from "@/components/forbidden-phrases-card";
 import { ProductFormCard } from "@/components/product-form-card";
 import { ProductHistoryCard } from "@/components/product-history-card";
 import { ProductsTableCard } from "@/components/products-table-card";
-import { ProductNotice } from "@/components/product-notice";
-import {
-  ForbiddenPhrasesSkeleton,
-  ProductFormSkeleton,
-  ProductsTableSkeleton,
-} from "@/components/product-skeletons";
+import type { HistoryEntryDto, ProductDto } from "@/lib/product-types";
 
 type ProductsContentProps = {
-  searchParams: PageProps<"/">["searchParams"];
+  editingProduct: ProductDto | null;
+  editError: string | null;
+  history: { productId: number; entries: HistoryEntryDto[] } | null;
+  historyError: string | null;
+  notice: string | null;
 };
 
-export function ProductsContent({ searchParams }: ProductsContentProps) {
+export function ProductsContent({
+  editingProduct, editError, history, historyError, notice,
+}: ProductsContentProps) {
   return (
     <div className="flex flex-col gap-6">
-      <Suspense fallback={null}>
-        <ProductNotice searchParams={searchParams} />
-      </Suspense>
-      <div className="grid gap-6 md:grid-cols-2">
-        <Suspense fallback={<ProductFormSkeleton />}>
-          <ProductFormCard searchParams={searchParams} />
-        </Suspense>
-        <Suspense fallback={<ForbiddenPhrasesSkeleton />}>
-          <ForbiddenPhrasesCard />
-        </Suspense>
+      {notice ? <p role="status">{notice}</p> : null}
+      <div className="grid items-start gap-6 md:grid-cols-2">
+        <ProductFormCard editingProduct={editingProduct} error={editError} />
+        <ForbiddenPhrasesCard />
       </div>
-      <Suspense fallback={<ProductsTableSkeleton />}>
-        <ProductsTableCard />
-      </Suspense>
-      <Suspense fallback={null}>
-        <ProductHistoryCard searchParams={searchParams} />
-      </Suspense>
+      <ProductsTableCard />
+      {historyError ? <p role="alert">{historyError}</p> : null}
+      {history ? <ProductHistoryCard {...history} /> : null}
     </div>
   );
 }

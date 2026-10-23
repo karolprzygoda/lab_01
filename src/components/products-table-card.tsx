@@ -1,65 +1,43 @@
-import { deleteProductAction } from "@/server/actions";
-import { SubmitButton } from "@/components/submit-button";
-import { Badge } from "@/components/ui/badge";
-import { ActionLink } from "@/components/action-link";
+import { Suspense } from "react";
+import { ProductRows } from "@/components/product-rows";
+import { ProductsRowsSkeleton } from "@/components/product-skeletons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { productService } from "@/server/services/product.service";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-export async function ProductsTableCard() {
-  const products = await productService.list();
-
+export function ProductsTableCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Produkty ({products.length})</CardTitle>
+        <CardTitle>Produkty</CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Nazwa</TableHead>
-              <TableHead>Kategoria</TableHead>
-              <TableHead>Cena</TableHead>
-              <TableHead>Ilość</TableHead>
-              <TableHead className="text-right">Akcje</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {products.map((product) => (
-              <TableRow key={product.id}>
-                <TableCell>{product.id}</TableCell>
-                <TableCell className="font-medium">{product.name}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{product.category}</Badge>
-                </TableCell>
-                <TableCell>{product.price.toFixed(2)} PLN</TableCell>
-                <TableCell>{product.quantity}</TableCell>
-                <TableCell className="flex justify-end gap-2">
-                  <ActionLink href={`/?edit=${product.id}`}>
-                    Edytuj
-                  </ActionLink>
-                  <ActionLink href={`/?history=${product.id}`}>
-                    Historia
-                  </ActionLink>
-                  <form action={deleteProductAction.bind(null, product.id)}>
-                    <SubmitButton size="sm" variant="destructive">
-                      Usuń
-                    </SubmitButton>
-                  </form>
-                </TableCell>
+        <div className="h-80 overflow-auto [scrollbar-gutter:stable]">
+          <Table className="min-w-[48rem] table-fixed">
+            <colgroup>
+              <col className="w-12" />
+              <col className="w-48" />
+              <col className="w-36" />
+              <col className="w-28" />
+              <col className="w-20" />
+              <col className="w-64" />
+            </colgroup>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Nazwa</TableHead>
+                <TableHead>Kategoria</TableHead>
+                <TableHead>Cena</TableHead>
+                <TableHead>Ilość</TableHead>
+                <TableHead>Akcje</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              <Suspense fallback={<ProductsRowsSkeleton />}>
+                <ProductRows />
+              </Suspense>
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
