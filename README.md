@@ -157,6 +157,8 @@ src/
 │   ├── forbidden-phrase-form.tsx            formularz dodawania fraz
 │   ├── forbidden-phrases-card.tsx           stała karta i formularz fraz
 │   ├── forbidden-phrases-list.tsx           serwerowy odczyt listy fraz
+│   ├── remove-phrase-badge.tsx              usuwanie całym czerwonym badge’em
+│   ├── notification-toast.tsx              toast po przekierowaniu i błędach URL
 │   ├── product-form-card.tsx                serwerowa otoczka formularza
 │   ├── product-form.tsx                     stan formularza produktu
 │   ├── product-history-card.tsx             tabela historii
@@ -169,6 +171,7 @@ src/
 │   ├── product-types.ts                     typy DTO, bez kodu serwerowego
 │   ├── product-rules.ts                     kategorie i zakresy cen/liczb
 │   ├── action-state.ts                      stan formularzy i komunikaty
+│   ├── action-toast.ts                      powiadomienie o wyniku akcji formularza
 │   └── utils.ts                             pomocnicze funkcje UI
 └── env.ts                                   walidacja środowiska przez T3 Env
 prisma/
@@ -408,6 +411,9 @@ pnpm test tests/validation.test.ts
 | [product-form.tsx](src/components/product-form.tsx) | Obsługuje stan błędów i zachowuje wartości pól przez `useActionState`. |
 | [products-table-card.tsx](src/components/products-table-card.tsx) | Stała karta, nagłówek i kolumny tabeli; `Suspense` jest wewnątrz `TableBody`. |
 | [product-rows.tsx](src/components/product-rows.tsx) | Pobiera listę produktów i zwraca wyłącznie wiersze z akcjami. |
+| [notification-toast.tsx](src/components/notification-toast.tsx) | Wyświetla przekazany toast sukcesu lub błędu; nie zajmuje miejsca w układzie strony. |
+| [action-toast.ts](src/lib/action-toast.ts) | Po zakończeniu akcji formularza wysyła wynik do gotowego Toast shadcn. |
+| [remove-phrase-badge.tsx](src/components/remove-phrase-badge.tsx) | Cały badge jest przyciskiem usuwania; ikona × jest w środku, a wariant `destructive` wyróżnia blokadę. |
 | [forbidden-phrases-card.tsx](src/components/forbidden-phrases-card.tsx) | Stała karta i formularz; `Suspense` obejmuje tylko listę fraz. |
 | [forbidden-phrases-list.tsx](src/components/forbidden-phrases-list.tsx) | Pobiera i wyświetla frazy z przyciskami usuwania. |
 | [product-history-card.tsx](src/components/product-history-card.tsx) | Wyświetla historię odczytaną wcześniej przez stronę. |
@@ -426,6 +432,12 @@ W całym panelu są tylko dwie granice `Suspense`: `ForbiddenPhrasesList` wewną
 
 Formularz używa bezpośrednio `Input` i części `Select` z `src/components/ui`. Cena i ilość to standardowe `Input type="number"`; nazwa i fraza używają tekstowego `Input`. `Select` otrzymuje `name="category"`, więc wybrana kategoria trafia do `FormData`. Domyślne `Field`, `FieldLabel`, `FieldDescription` i `FieldError` zastępują wcześniejsze własne komponenty formularza; powiązania `id`, `htmlFor`, `aria-describedby` oraz `aria-invalid` są przekazywane bezpośrednio do kontrolek. Przejścia listy i pulsowanie szkieletów pochodzą z komponentów shadcn oraz `tw-animate-css`; projekt nie dodaje własnych animacji CSS.
 
+`Toaster` z `src/components/ui/toast.tsx` jest zamontowany raz w głównym layoucie. Dodanie produktu i frazy wywołuje `withActionToast` w obsłudze akcji, bez obserwowania stanu formularza przez efekt. Gotowe typy `success` i `error` dobierają ikony i wygląd; błędy pól nadal są widoczne przy kontrolkach. Komunikaty ogólne nie zwiększają wysokości formularza.
+
+Po edycji lub usunięciu serwer przekierowuje na `/?notice=KOD&noticeId=UUID`. `NotificationToast` pokazuje komunikat raz i usuwa te dwa parametry przez `router.replace` z `scroll: false`, aby adres i stan routera były zgodne. Osobny UUID rozróżnia kolejne identyczne komunikaty. Ten sam komponent prezentuje błędy parametrów edycji i historii.
+
+Pusta tabela zawiera standardowy shadcn `Empty`: ikonę, tytuł „Brak produktów” oraz wskazówkę dodania pierwszego produktu. Data Table w dokumentacji shadcn jest wzorcem rozbudowy komponentu `Table`, nie osobnym gotowym komponentem. Projekt zachowuje serwerowe wiersze i dwie granice `Suspense`, bez dodatkowej biblioteki do sortowania i filtrowania.
+
 ### Typy propsów tras
 
 `LayoutProps<"/">` w głównym layoucie oznacza propsy layoutu przypisanego do `/`, w tym `children`. `PageProps<"/">` w stronie określa propsy strony, m.in. asynchroniczne `searchParams`. Zapis `PageProps<"/">["searchParams"]` wybiera z tego typu sam typ parametrów zapytania; używają go strona i funkcje w `products-view.ts`. Karty otrzymują gotowe dane.
@@ -443,7 +455,7 @@ Parametry panelu:
 - `/?edit=ID` — wybór produktu do edycji;
 - `/?history=ID` — wyświetlenie historii, również po usunięciu produktu.
 
-`getProductSelection` sprawdza również pojedyncze wystąpienie ID: np. `?edit=1&edit=2` daje komunikat o niepoprawnym identyfikatorze. Parametr `notice` wybiera komunikat ze stałej `NOTICES`; nieznane wartości są pomijane. Oczekiwany brak produktu jest komunikatem w panelu, a nieoczekiwana awaria odczytu trafia do `error.tsx`.
+`getProductSelection` sprawdza również pojedyncze wystąpienie ID: np. `?edit=1&edit=2` daje toast o niepoprawnym identyfikatorze. Parametr `notice` wybiera tytuł i typ ze stałej `NOTICES`; nieznane wartości są pomijane. Oczekiwany brak produktu jest toastem błędu, a nieoczekiwana awaria odczytu trafia do `error.tsx`.
 
 Panel korzysta ze standardowego dynamicznego renderowania App Router, bez flag `cacheComponents` i `partialPrefetching`. Pozwala to rozwiązać parametry żądania przed renderowaniem formularza i pozostawić `Suspense` wyłącznie przy dwóch listach. Dane magazynowe nie są buforowane między żądaniami.
 
