@@ -22,11 +22,10 @@ export function ProductFormCard({ editingProduct }: { editingProduct: ProductDto
         <ProductForm
           key={editingProduct?.id ?? "new"}
           productId={editingProduct?.id}
-          categoryOptions={Object.entries(CATEGORY_NAMES).map(([category, label]) => (
-            <option key={category} value={category}>
-              {label} ({PRICE_RANGES[category as Category].min}–{PRICE_RANGES[category as Category].max} PLN)
-            </option>
-          ))}
+          categoryOptions={Object.entries(CATEGORY_NAMES).map(([category, label]) => ({
+            value: category,
+            label: `${label} (${PRICE_RANGES[category as Category].min}–${PRICE_RANGES[category as Category].max} PLN)`,
+          }))}
           initialValues={editingProduct ? {
             name: editingProduct.name,
             category: editingProduct.category,

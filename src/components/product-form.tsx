@@ -13,13 +13,21 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { MAX_DATABASE_INT } from "@/lib/product-rules";
 
 export function ProductForm({ productId, initialValues, categoryOptions, children }: {
   productId?: number;
   initialValues: ProductFormValues;
-  categoryOptions: ReactNode;
+  categoryOptions: { value: string; label: string }[];
   children: ReactNode;
 }) {
   const initialState: ActionState<ProductFormValues> = { ok: false, revision: 0, values: initialValues };
@@ -55,17 +63,26 @@ export function ProductForm({ productId, initialValues, categoryOptions, childre
       <FormField name="category">
         <FormItem>
           <FormLabel>Kategoria</FormLabel>
-          <FormControl>
-            <Select name="category" defaultValue={values.category}>
-              {categoryOptions}
-            </Select>
-          </FormControl>
+          <Select name="category" defaultValue={values.category} items={categoryOptions} required>
+            <FormControl>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Wybierz kategorię" />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent alignItemWithTrigger={false} className="motion-reduce:animate-none">
+              <SelectGroup>
+                {categoryOptions.map(({ value, label }) => (
+                  <SelectItem key={value} value={value}>{label}</SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
           <FormDescription>Wybierz kategorię określającą dopuszczalny zakres cen.</FormDescription>
           <FormMessage aria-live="polite" />
         </FormItem>
       </FormField>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <FormField name="price">
           <FormItem>
             <FormLabel>Cena (PLN)</FormLabel>
@@ -73,7 +90,8 @@ export function ProductForm({ productId, initialValues, categoryOptions, childre
               <Input
                 name="price"
                 type="number"
-                step="0.01"
+                step={0.01}
+                min={0}
                 defaultValue={values.price}
                 required
               />
@@ -90,6 +108,9 @@ export function ProductForm({ productId, initialValues, categoryOptions, childre
               <Input
                 name="quantity"
                 type="number"
+                step={1}
+                min={0}
+                max={MAX_DATABASE_INT}
                 defaultValue={values.quantity}
                 required
               />
@@ -100,7 +121,8 @@ export function ProductForm({ productId, initialValues, categoryOptions, childre
         </FormField>
       </div>
 
-      <div className="flex gap-2 pt-1">
+      <Separator />
+      <div className="flex gap-2">
         {children}
       </div>
     </Form>
